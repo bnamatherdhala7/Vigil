@@ -59,13 +59,13 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 
 **Talk track:**
 
-> "Splunk's 2026 predictions explicitly say reactive operations are no longer enough — agentic AI is the path. Cisco's AgenticOps vision at Cisco Live 2025 says the same thing. Neither has shipped the application layer that fulfills that vision. I built a prototype of it."
+> "I watched the Splunk AI Toolkit Agent Builder private preview demo. Vigil is exactly the kind of sophisticated, foundation-model-grounded workflow Agent Builder is designed to host. **Agent Builder is the platform; Vigil is a canonical first sophisticated template that runs on it.**"
 
-> "**Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco Time Series Model for forecasting, a swappable foundation-model agent for reasoning (Claude today, Cisco Deep Network Model at GA), OpenAI embeddings for retrieval.**"
+> "Specifically: **Vigil is a 7-state Finite State Machine workflow that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop**, grounded by Cisco Time Series Model for forecasting and a swappable foundation-model agent for reasoning (Claude today, Cisco Deep Network Model at GA), with Pinecone Retrieval-Augmented Generation and a Pydantic JSON audit trail per investigation."
 
-> "Up-front honest framing: this is mock data and a single-engineer prototype. But every responsibility in the AI Foundations job description maps to something I've built and measured here. I'll walk you through it in 15 minutes."
+> "Up-front honest framing: this is mock data and a single-engineer prototype. **But three of Agent Builder's announced roadmap items — template ecosystem, human-in-loop approvals, broader MCP server support — are already shipped in Vigil.** I'll walk you through it in 15 minutes."
 
-**Key signal:** You're showing PM thinking and execution rigor, not selling a startup. The "mock data, single-engineer prototype" acknowledgment up-front earns credibility for everything that follows.
+**Key signal:** Acknowledges Agent Builder explicitly in the first 30 seconds. Positions Vigil as complementary, not competitive. The "three roadmap items already solved" line earns the right to keep talking.
 
 **Pivot to next:** *"Before I built anything, I went to Splunk's own research..."*
 
@@ -247,7 +247,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 
 **Talk track:**
 
-> "If you treat Vigil as one application — incident commander — you ship one application. If you treat it as the platform layer underneath, the same code becomes the substrate Splunk Security Operations, Splunk Observability, Splunk IT Service Intelligence, Cisco AgenticOps, and Cisco Cloud Security all build on. **Same code, ten times the surface area.**"
+> "Here is the strategic frame. **Vigil is a template, not a product. Splunk AI Toolkit Agent Builder is the platform that runs templates like Vigil.** If Vigil is one template in your registry, it serves one use case — network incident commander. If the registry has 50 templates of this depth — security threat hunting, capacity planning, compliance audit, hybrid network operations — that is the agentic-template platform Sonal's team is building. **Same architecture, fifty different applications.**"
 
 > "The identity in one sentence: **Vigil is an MCP-guided workflow. Customizable, auditable, human-in-the-loop. Each team forks the default workflow, adds their own steps, and configures their own confidence thresholds — autonomous on routine cases, human approval on novel or high-risk.**"
 
@@ -314,6 +314,22 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ---
 
 ## Q&A — Likely Questions, Prepared Answers
+
+### About Splunk AI Toolkit Agent Builder ★ MOST IMPORTANT CATEGORY
+
+**Q: "How does Vigil compare to Splunk Agent Builder?"**
+> "Complementary, not competitive. Agent Builder is the platform that runs templates. Vigil is what one sophisticated, production-grade template looks like — with FSM, RAG, foundation-model forecasting, evaluator, and audit trail. Agent Builder ships the runtime; Vigil ships as the first canonical workflow on it. Three of your announced roadmap items — template ecosystem, human-in-loop approvals, broader MCP integration — are already shipped in Vigil."
+
+**Q: "Why didn't you just build Vigil on Agent Builder?"**
+> "Agent Builder is in private preview — I didn't have access. I built the workflow architecture that becomes a canonical template once Agent Builder ships publicly. The MCP-guided pattern, the manifest concept, the human-in-loop confidence routing — all align with where Agent Builder is going. The integration work — Native SPL invocation, plain-English goal definition, compliance-boundary execution — is what I want to do with your team."
+
+**Q: "What would you contribute to Agent Builder in the first six months?"**
+> "Three deliverables. **First, Vigil as Template #1** — published in the registry with case study, benchmark, and customer reference. **Second, template authoring standards** — written documentation of what a sophisticated template should look like (FSM + RAG + evaluator + audit trail), so the community can ship templates against the same standard. **Third, two more templates in adjacent categories** — likely security threat hunting and capacity planning — to seed the ecosystem before public General Availability. Each measured against the same benchmark framework as Vigil."
+
+**Q: "How would you handle the conversational follow-ups roadmap item?"**
+> "Vigil's FSM already produces a structured audit trail per investigation. Conversational follow-up is a UX layer on top — the agent re-reads the trail, surfaces the specific evidence the user asks about, never re-runs the underlying tools unnecessarily. That's how you keep follow-ups fast and audit-trail-consistent. **And it's where Agent Builder's value compounds — same trail, multiple conversations with different users (SRE, security, manager) all grounded in the same JSON record.**"
+
+---
 
 ### Technical Depth
 
