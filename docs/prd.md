@@ -6,11 +6,7 @@
 **Author:** Bharat Namatherdhala
 **Date:** June 2026
 **Companion documents:**
-- [`docs/director-brief.md`](./director-brief.md) — 5-min Director read
-- [`docs/jon-elli-brief.md`](./jon-elli-brief.md) — 15-min peer PM read
-- [`docs/prd-v1.md`](./prd-v1.md) — full-length PRD archive (~30 min, all phase deep dives)
-- [`docs/competitive-landscape.md`](./competitive-landscape.md) — 25+ vendor breakdown
-- [`docs/model-evaluation.md`](./model-evaluation.md) — CTSM benchmark + engineering roadmap
+
 
 > **10-minute read.** This version keeps every important topic — problems, what we built, results, platform scaling, competitive position — and compresses architecture deep-dives. Full architecture detail lives in [`prd-v1.md`](./prd-v1.md).
 
