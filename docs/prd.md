@@ -32,7 +32,7 @@ Every problem statement is grounded in Splunk's own 2025–2026 published resear
 - **32% of an analyst's day is spent on false alarms** *([Dimitri McKay, Splunk](https://www.splunk.com/en_us/blog/security/reduce-security-investigation-costs.html))*
 - **94% of CISOs cite false alerts as top burnout driver** *([Splunk CISO Report](https://www.splunk.com/en_us/campaigns/ciso-report.html))*
 
-**Vigil's answer:** Phase 2.5 pre-triage suppresses **35–40% of alerts at zero tokens, sub-millisecond** — before any model call.
+**Vigil's answer:** Phase 2.5 pre-triage is the **"needle-in-the-ocean" filter** (Hao Yang's framing for the modern observability scale problem). Rules-based, **zero tokens, sub-millisecond — 35–40% of alerts suppressed before any model call.** Putting a foundation model here would be the wrong tool: pre-triage is logical filtering, not pattern recognition.
 
 ### 2. Investigation Is Manual, Fragmented, and Slow
 
@@ -116,7 +116,7 @@ ALERT ─►│  PHASE 2.5  PRE-TRIAGE                              (0 tokens) �
 - **Phase 2.5 — Pre-Triage:** Rules-based scoring of signal count, repeat frequency, correlation. Suppresses 35–40% at zero tokens. **Logical filtering, not pattern recognition** — explicit if-then logic.
 - **Phase 2 — Finite State Machine + RAG:** 7-state FSM with threshold-based transitions (never LLM judgment). Pinecone vector stores ground every step — 20 vetted SPL patterns + 30 past incident resolutions.
 - **Phase 3 — Evaluator:** Same base model, two prompting strategies. **0.91 precision (constrained) vs 0.55 (unconstrained)** — schema enforcement is the lever.
-- **Phase 4 — Proactive Forecasting:** Cisco Time Series Model (point forecast, best BGP MASE 0.80) + Chronos (probability distribution). Three trigger types: THRESHOLD, TRAJECTORY, UNCERTAINTY. Every investigation becomes a labeled training example for customer-specific CTSM fine-tuning.
+- **Phase 4 — Proactive Forecasting:** Hao Yang's framing: *"Machines speak physics, not human language — CPU vs memory vs network traffic have very different patterns, each with its own physics."* Cisco Time Series Model and Chronos are **time-series language models** trained on time-series tokens instead of text. Vigil uses CTSM for point forecast (best BGP MASE 0.80) + Chronos for probability distribution. Three trigger types: THRESHOLD, TRAJECTORY, UNCERTAINTY. Every investigation becomes a labeled training example for customer-specific CTSM fine-tuning — the foundation-model + customer-data combination Hao describes as the AI Toolkit pattern.
 
 ---
 
@@ -299,6 +299,8 @@ The metrics measured across the four reference scenarios with the production cos
 | Comprehensive competitive landscape across 25+ vendors | ✅ Documented |
 
 **The path forward:** When Splunk AI Toolkit Agent Builder ships publicly, Vigil ships as Template #1. When Cisco AI Canvas ships, Vigil's FSM maps to a Canvas workflow. When Cisco Deep Network Model ships, the foundation-model agent call swaps from Claude to Cisco-native — schema enforcement preserves the 0.91 precision contract.
+
+**The future is multi-agent.** Per Hao Yang: *"Specialized agents — general-purpose or specially-built models — interact via an open standard like MCP."* Vigil is the canonical first agent in that world. Template #2 (security threat hunting), Template #3 (capacity planning), Template #4 (compliance audit) all reuse the same orchestrator pattern, the same Pinecone RAG primitive, the same audit-trail JSON schema. **One platform, many specialized agents, all coordinating through MCP. That's the template ecosystem Sonal's team is building, and Vigil is the proof of what one sophisticated template looks like.**
 
 **The architecture is built to absorb the platform ecosystem — not race it.**
 

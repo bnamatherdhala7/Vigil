@@ -59,7 +59,9 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 
 **Talk track:**
 
-> "I watched the Splunk AI Toolkit Agent Builder private preview demo. Vigil is exactly the kind of sophisticated, foundation-model-grounded workflow Agent Builder is designed to host. **Agent Builder is the platform; Vigil is a canonical first sophisticated template that runs on it.**"
+> "Before I built Vigil, I read your Security Predictions 2026 — *'MTTR becomes a snapshot of how late we were'* — your CTO blog on domain-specific small language models, and the Cisco Time Series Model launch announcement Sonal and Liang co-authored. **Vigil is a working application of the direction you've laid out.**"
+
+> "I also watched the Splunk AI Toolkit Agent Builder private preview demo. Vigil is exactly the kind of sophisticated, foundation-model-grounded workflow Agent Builder is designed to host. **Agent Builder is the platform; Vigil is a canonical first sophisticated template that runs on it.**"
 
 > "Specifically: **Vigil is a 7-state Finite State Machine workflow that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop**, grounded by Cisco Time Series Model for forecasting and a swappable foundation-model agent for reasoning (Claude today, Cisco Deep Network Model at GA), with Pinecone Retrieval-Augmented Generation and a Pydantic JSON audit trail per investigation."
 
