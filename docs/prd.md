@@ -1,24 +1,26 @@
 # Product Requirements Document
 ## Vigil — Agentic Incident Commander for Network Operations
 
-**Status:** Shipped (prototype with mock data)
-**Audience:** VP of Product · Director of PM
+**Status:** Prototype with mock data
+**Audience:** VP of Product · Engineering Leadership · Cross-functional partners
 **Author:** Bharat Namatherdhala
 **Date:** June 2026
 **Companion documents:**
+- [`docs/competitive-landscape.md`](./competitive-landscape.md) — 25+ vendor breakdown
+- [`docs/model-evaluation.md`](./model-evaluation.md) — Cisco Time Series Model benchmark + engineering roadmap
+- [`docs/archive/`](./archive/) — historical working documents (prior PRD versions, demo scripts, briefing notes)
 
-
-> **10-minute read.** This version keeps every important topic — problems, what we built, results, platform scaling, competitive position — and compresses architecture deep-dives. Full architecture detail lives in [`prd-v1.md`](./prd-v1.md).
+> **10-minute read.** Problem statement, architecture, platform vision, competitive position, results, and the path forward.
 
 ---
 
 ## The One-Line Story
 
-**Splunk AI Toolkit Agent Builder is the platform. Vigil is the canonical first sophisticated template that runs on it.** A 7-state Finite State Machine workflow that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by Cisco Time Series Model + Chronos for forecasting, Pinecone Retrieval-Augmented Generation for past-incident memory, with built-in human-in-loop confidence routing and a Pydantic JSON audit trail per investigation.
+**Cisco and Splunk have both shipped Model Context Protocol servers with network operations tools. Neither has shipped the reasoning layer that connects them, sequences the queries, and makes the escalate-or-fix decision at 2 a.m.** Vigil is that layer — a 7-state Finite State Machine workflow that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by Cisco Time Series Model + Chronos for forecasting, Pinecone Retrieval-Augmented Generation for past-incident memory, with built-in human-in-loop confidence routing and a Pydantic JSON audit trail per investigation.
 
-**Three of Agent Builder's published roadmap items — template ecosystem, human-in-loop approvals, broader MCP integration — are already shipped in Vigil.**
+**Vigil is positioned as a canonical sophisticated template for an agentic-workflow platform** — the kind of workflow Splunk AI Toolkit Agent Builder, Cisco AI Canvas, or any future agentic-template runtime is designed to host. Three of those platforms' announced roadmap items — template ecosystem, human-in-loop approvals, broader MCP integration — are already shipped in Vigil today.
 
-The question Vigil answers is not how fast the investigation runs — it is whether the investigation needed to happen at all.
+**The question Vigil answers is not how fast the investigation runs — it is whether the investigation needed to happen at all.**
 
 ---
 
@@ -32,7 +34,7 @@ Every problem statement is grounded in Splunk's own 2025–2026 published resear
 - **32% of an analyst's day is spent on false alarms** *([Dimitri McKay, Splunk](https://www.splunk.com/en_us/blog/security/reduce-security-investigation-costs.html))*
 - **94% of CISOs cite false alerts as top burnout driver** *([Splunk CISO Report](https://www.splunk.com/en_us/campaigns/ciso-report.html))*
 
-**Vigil's answer:** Phase 2.5 pre-triage is the **"needle-in-the-ocean" filter** (Hao Yang's framing for the modern observability scale problem). Rules-based, **zero tokens, sub-millisecond — 35–40% of alerts suppressed before any model call.** Putting a foundation model here would be the wrong tool: pre-triage is logical filtering, not pattern recognition.
+**Vigil's answer:** Phase 2.5 pre-triage is the **"needle-in-the-ocean" filter** (per Splunk's leadership framing for the modern observability scale problem). Rules-based, **zero tokens, sub-millisecond — 35–40% of alerts suppressed before any model call.** Putting a foundation model here would be the wrong tool: pre-triage is logical filtering, not pattern recognition.
 
 ### 2. Investigation Is Manual, Fragmented, and Slow
 
@@ -66,7 +68,7 @@ Every problem statement is grounded in Splunk's own 2025–2026 published resear
 | *"Leading enterprises will resolve high-severity incidents autonomously"* | Graduated safety: SUPPRESSED / REMEDIATING / ESCALATING — autonomous on routine, human-required on novel |
 | *"Domain-specific small language models will outperform general-purpose LLMs for operational tasks"* (Splunk CTO Blog) | Constrained mode: same base model, schema enforcement, 0.91 precision at 57% lower token cost |
 | Cisco Time Series Model launched 24 Nov 2025 — open-weights, 300B+ datapoints ([Sonal Pardeshi + Liang Gou](https://www.splunk.com/en_us/blog/artificial-intelligence/introducing-the-cisco-time-series-model.html)) | Vigil benchmarked CTSM the week the model dropped. v1.0 due early 2026 — partnership window open now |
-| Splunk AI Toolkit Agent Builder in private preview — template ecosystem roadmap, human-in-loop approvals, broader MCP server support | Three of these roadmap items already shipped in Vigil. The remaining four are exactly the integration work this role would do. |
+| Splunk AI Toolkit Agent Builder in private preview — template ecosystem roadmap, human-in-loop approvals, broader MCP server support | Three of these roadmap items already shipped in Vigil. The remaining four (native SPL invocation, plain-English goal definition, compliance-boundary execution, conversational follow-ups) are well-scoped integration work. |
 
 ---
 
@@ -116,7 +118,7 @@ ALERT ─►│  PHASE 2.5  PRE-TRIAGE                              (0 tokens) �
 - **Phase 2.5 — Pre-Triage:** Rules-based scoring of signal count, repeat frequency, correlation. Suppresses 35–40% at zero tokens. **Logical filtering, not pattern recognition** — explicit if-then logic.
 - **Phase 2 — Finite State Machine + RAG:** 7-state FSM with threshold-based transitions (never LLM judgment). Pinecone vector stores ground every step — 20 vetted SPL patterns + 30 past incident resolutions.
 - **Phase 3 — Evaluator:** Same base model, two prompting strategies. **0.91 precision (constrained) vs 0.55 (unconstrained)** — schema enforcement is the lever.
-- **Phase 4 — Proactive Forecasting:** Hao Yang's framing: *"Machines speak physics, not human language — CPU vs memory vs network traffic have very different patterns, each with its own physics."* Cisco Time Series Model and Chronos are **time-series language models** trained on time-series tokens instead of text. Vigil uses CTSM for point forecast (best BGP MASE 0.80) + Chronos for probability distribution. Three trigger types: THRESHOLD, TRAJECTORY, UNCERTAINTY. Every investigation becomes a labeled training example for customer-specific CTSM fine-tuning — the foundation-model + customer-data combination Hao describes as the AI Toolkit pattern.
+- **Phase 4 — Proactive Forecasting:** As Splunk's leadership has framed it, *"machines speak physics, not human language — CPU vs memory vs network traffic have very different patterns, each with its own physics."* Cisco Time Series Model and Chronos are **time-series language models** trained on time-series tokens instead of text. Vigil uses CTSM for point forecast (best BGP MASE 0.80) + Chronos for probability distribution. Three trigger types: THRESHOLD, TRAJECTORY, UNCERTAINTY. Every investigation becomes a labeled training example for customer-specific CTSM fine-tuning — the foundation-model + customer-data combination that's the core AI Toolkit pattern.
 
 ---
 
@@ -286,7 +288,7 @@ The metrics measured across the four reference scenarios with the production cos
 
 ## The Bottom Line
 
-**Vigil is the canonical first sophisticated template for Splunk AI Toolkit Agent Builder.** Built today as a 4-phase application; runs tomorrow as a template in the Agent Builder registry; integrates with Cisco AI Canvas at General Availability.
+**Vigil is the canonical sophisticated template for the agentic-workflow platform era.** Built today as a 4-phase application; runs as a template in any agentic-workflow runtime (Splunk AI Toolkit Agent Builder, Cisco AI Canvas, or future equivalents); ready to absorb each platform's roadmap as it ships.
 
 | Capability | Status |
 |---|---|
@@ -300,10 +302,8 @@ The metrics measured across the four reference scenarios with the production cos
 
 **The path forward:** When Splunk AI Toolkit Agent Builder ships publicly, Vigil ships as Template #1. When Cisco AI Canvas ships, Vigil's FSM maps to a Canvas workflow. When Cisco Deep Network Model ships, the foundation-model agent call swaps from Claude to Cisco-native — schema enforcement preserves the 0.91 precision contract.
 
-**The future is multi-agent.** Per Hao Yang: *"Specialized agents — general-purpose or specially-built models — interact via an open standard like MCP."* Vigil is the canonical first agent in that world. Template #2 (security threat hunting), Template #3 (capacity planning), Template #4 (compliance audit) all reuse the same orchestrator pattern, the same Pinecone RAG primitive, the same audit-trail JSON schema. **One platform, many specialized agents, all coordinating through MCP. That's the template ecosystem Sonal's team is building, and Vigil is the proof of what one sophisticated template looks like.**
+**The future is multi-agent.** Per Splunk's published direction: *"Specialized agents — general-purpose or specially-built models — interact via an open standard like MCP."* Vigil is the canonical first agent in that world. Template #2 (security threat hunting), Template #3 (capacity planning), Template #4 (compliance audit) all reuse the same orchestrator pattern, the same Pinecone RAG primitive, the same audit-trail JSON schema. **One platform, many specialized agents, all coordinating through MCP.**
 
 **The architecture is built to absorb the platform ecosystem — not race it.**
 
-**The strategic question:** Who builds Template #1 — the canonical sophisticated workflow that proves what Agent Builder can do — and how do we make that the network incident commander already shipped, measured, and benchmarked against the rest of the foundation-model market?
-
-That's the role.
+Cisco and Splunk's vision for agentic operations is shipping in 2026. The question is who builds the canonical templates that prove what that platform can do — and Vigil is one working answer to that question, measured and benchmarked end-to-end.

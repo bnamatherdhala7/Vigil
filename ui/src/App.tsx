@@ -283,7 +283,7 @@ export default function App() {
     }
 
     es.onerror = () => {
-      dispatch({ type: 'ERROR', message: 'Connection lost. Is the API server running?' })
+      dispatch({ type: 'ERROR', message: 'Backend not reachable. Vigil\'s UI is deployed; the FSM backend runs separately (see README → "Running locally"). The Forecast Strip, FSM diagram, and Run History work without the backend.' })
       es.close()
       esRef.current = null
     }
