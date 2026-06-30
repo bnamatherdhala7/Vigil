@@ -1,0 +1,36 @@
+# Keep Vercel from picking up Python files and deploying them as serverless functions.
+# Vigil's backend (FastAPI + FSM commander) runs separately — see docs/deployment.md.
+
+# Python source trees
+api/
+phase1_mcp/
+phase2_5_classifier/
+phase2_agent/
+phase3_evaluator/
+vigil/
+tests/
+demo/
+scripts/
+data/
+
+# Python files anywhere
+*.py
+*.ipynb
+*.pyc
+*.pyo
+__pycache__/
+
+# Python project config — Vercel auto-detects these as Python projects
+pyproject.toml
+requirements.txt
+setup.py
+setup.cfg
+
+# Other docs / artifacts that don't belong in the deployed UI bundle
+docs/
+splunk_evals.ipynb
+CLAUDE*.md
+*.md
+!ui/
+
+# But DO keep ui/ — that's what we're deploying
