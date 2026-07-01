@@ -141,20 +141,33 @@ This is what gets persisted to the run log, archived to `Run History`, and (in p
 
 ![Evaluator](./screenshots/11-evaluator.png)
 
-Once an FSM run completes, the Evaluator runs the same incident through *two* model configurations back-to-back:
+Once an FSM run completes, the Evaluator scores it against *two* baseline model configurations and displays all three side by side:
 
-- **Generic** — the base Claude model with no schema enforcement, plain-English prompt
-- **Constrained** — the same Claude model with Pydantic schema enforcement + structured system prompt
+- **INVESTIGATION** (blue) — the actual Vigil FSM run: 7-state commander, MCP tool calls, Pinecone RAG
+- **GENERIC LLM** (orange) — the same base Claude model answering the same incident with no schema enforcement, no FSM, no RAG
+- **CONSTRAINED** (green) — the same base Claude model with Pydantic schema enforcement + structured system prompt, no FSM, no RAG
 
-Both use the same base LLM. The point is to isolate the *effect of schema enforcement*, not to compare different models.
+Both baselines use the same LLM as Vigil. The point is to isolate what the *architecture* — FSM + tools + RAG + schema — contributes vs. raw model output.
 
-The panel scores each run on four dimensions:
-- **Precision** — of the claims made, how many are supported by evidence?
-- **Recall** — of the ground-truth findings, how many did the agent surface?
-- **Token cost** — `total_tokens × cost_per_1k`
-- **Tool efficiency** — evidence yielded per tool call
+The panel scores each column on four dimensions:
 
-The rightmost column is a weighted composite — Vigil's headline quality metric. This panel is what makes token cost a first-class concern in the product — you can see it dollar-cost every run, which matters at Splunk/Cisco scale.
+| Metric | What it measures |
+|---|---|
+| **Tokens** | Total tokens consumed for the run |
+| **Cost** | `total_tokens × cost_per_1k` — dollar cost per investigation |
+| **Precision** | Of the claims made, how many are supported by evidence? |
+| **Recall** | Of the ground-truth findings, how many did the agent surface? |
+| **Actionability** | Does the output name a specific device, threshold, and next step? |
+| **Composite** | Weighted rollup — Vigil's headline quality metric |
+
+**Real numbers from the capture:**
+- **Investigation:** 8,764 tokens · $0.0427 · 100% precision · 89% recall · 75% actionability · **0.90 composite**
+- **Generic LLM:** 1,993 tokens · $0.0183 · 56% precision · 56% recall · 50% actionability · **0.63 composite**
+- **Constrained:** 1,435 tokens · $0.0102 · 100% precision · 89% recall · 100% actionability · **0.97 composite** · **-83.6% tokens vs. Investigation**
+
+The Constrained column tells the interesting story: pure schema enforcement (no FSM, no tools, no RAG) can produce a Pydantic-valid answer that's structurally on-par with a full FSM run for this specific incident — at ~17% of the token cost. Vigil's headline value isn't the composite score; it's what the FSM *also* produces that the constrained-only run can't: an audit trail, a state-transition log, verified evidence from real tool calls, and a run history operators can review. Composite parity is the point where "cheaper baseline" becomes a real question worth answering, not a reason to skip the FSM.
+
+This panel is what makes token cost a first-class concern in the product — you can see it dollar-cost every run, which matters at Splunk/Cisco scale.
 
 ---
 
@@ -162,29 +175,117 @@ The rightmost column is a weighted composite — Vigil's headline quality metric
 
 ![Run History](./screenshots/12-run-history.png)
 
-Persisted to `localStorage`, so every investigation the user has run in this browser accumulates here (empty in this capture because we're mid-run — runs only archive on Complete). Each row shows:
+Persisted to `localStorage`, so every investigation the user has run in this browser accumulates here. Each row shows:
 
-- The scenario ID + terminal state
-- Timestamp + duration
-- Tool count + token cost
-- A one-line summary from the Incident Report
+- The scenario ID (`Packet Loss` in the capture)
+- Terminal state pill (`ESCALATING`)
+- Duration and total tokens (`45.5s · 8,764 tokens`)
+- Relative time (`45s ago`)
 
-Clicking any row opens the **Full Trace Overlay** — the archived run's complete event log, JSON-copyable and JSON-downloadable, useful for both audit review and post-incident analysis. It's the "receipts" surface for anything Vigil has done in the past.
+Clicking any row opens the **Full Trace Overlay** (next section) — the archived run's complete event log. The header `last 1 run · click to view full trace` is a hint to the user that these rows are interactive. `CLEAR` (top-right) wipes the entire history from `localStorage`.
+
+Max retention: 10 runs. Once the archive hits that ceiling, the oldest is dropped as new runs archive — enough for the "review my last few investigations" use case without letting `localStorage` grow unbounded.
 
 ---
 
-## 10. Populated Overview — Everything Working Together
+## 10. Full Trace Overlay — Auditable Event Log
+
+![Full Trace overlay](./screenshots/13-full-trace-overlay.png)
+
+Clicking a Run History row opens this overlay — Vigil's audit-trail view. Six sections, top to bottom:
+
+**1. Run Metadata** — scenario, incident ID, severity, timestamp, duration, terminal state, tool-call count. The primary-key fields that identify this run in perpetuity.
+
+**2. Metrics grid** — RAG retrievals, state transitions, forecast triggers fired, total tokens. Quick answers to "was this a heavy run?" or "did the forecast layer trigger?"
+
+**3. FSM State Machine Path** — the exact sequence of states the FSM walked, as a pill trail: `PRE_TRIAGE → TRIAGE → INVESTIGATING → ESCALATING`. If any transition ever looks wrong in a post-incident review, this is where the auditor starts.
+
+**4. Chronological Trace** — the full event stream, one row per event, ordered by elapsed time. Six event types interleave:
+- **PREDICTIVE TRIGGER** — a forecast panel fired (Trajectory, Threshold, Uncertainty) with the model and confidence
+- **FSM transition** — state change with the reason
+- **PRE_TRIAGE classifier** — the alert-scoring layer's decision (signal_count, HIGH triggers, base/final score)
+- **RAG** — a Pinecone retrieval with the query and top-K results
+- **TOOL** — an MCP tool call with input payload (and, when expanded, output)
+
+**5. Copy JSON / Download** buttons (top right) — the whole run serializes to JSON. Copy for pasting into Slack/ticket; Download for archival or offline replay. The exact JSON schema is documented under the "Trace Log JSON" section below.
+
+**6. Close (✕)** — dismiss and return to the dashboard.
+
+This is the "receipts" surface for anything Vigil has ever done in the current browser. Combined with backend-side run persistence (planned for the deployed backend), it forms the audit trail that regulators, security reviewers, and post-incident analysts expect.
+
+---
+
+## 11. Trace Log JSON — What Gets Persisted
+
+A sample archived run — the actual output of the Download button — lives at [`sample-trace.json`](./sample-trace.json) in this folder. 13.3 KB, contains one full FSM investigation. Top-level shape:
+
+```jsonc
+{
+  "id": "run-…",
+  "scenarioMeta": { "id": "packet_loss", "label": "Packet Loss", "severity": "P2", ... },
+  "startTimeMs": 1719872895000,
+  "endTimeMs":   1719872938150,
+  "durationMs":  43150,
+  "finalState":  "ESCALATING",
+  "fsmHistory":  ["PRE_TRIAGE", "TRIAGE", "INVESTIGATING", "ESCALATING"],
+  "feedItems":   [ … 14 events: tool calls + RAG events + state transitions + pre-triage entries … ],
+  "report": {
+    "incident_id": "INC-20240214-001",
+    "final_state": "ESCALATING",
+    "hypothesis": "…",
+    "evidence": [ … ],
+    "tool_calls": 5,
+    "recommended_action": "…",
+    "confidence": 0.78,
+    "total_tokens":  8698,
+    "input_tokens":  …,
+    "output_tokens": …,
+    "cache_creation_input_tokens": …,
+    "cache_read_input_tokens":     …,
+    "haiku_input_tokens":  …,
+    "haiku_output_tokens": …,
+    "sonnet_input_tokens":  …,
+    "sonnet_output_tokens": …,
+    "duration_secs": …,
+    "cost_usd":      0.0427,
+    "cost_breakdown": { … }
+  },
+  "evalResults": {
+    "incident_id": "INC-20240214-001",
+    "investigation": { "precision": 1.0, "recall": 0.89, "actionability": 0.75, "composite": 0.90, "tokens": 8764, "cost_usd": 0.0427 },
+    "generic":       { "precision": 0.56, "recall": 0.56, "actionability": 0.50, "composite": 0.63, "tokens": 1993, "cost_usd": 0.0183 },
+    "constrained":   { "precision": 1.0, "recall": 0.89, "actionability": 1.0,  "composite": 0.97, "tokens": 1435, "cost_usd": 0.0102 },
+    "token_savings_pct": -83.6
+  },
+  "mttdData":   { "headline": "…", "mttr_speedup_pct": 99.4, … },
+  "totalTokens": 8764
+}
+```
+
+**Why this is the audit surface, not the UI:**
+- **`fsmHistory`** — the exact state path, immutable, verifiable against the FSM's declared transition rules
+- **`feedItems`** — the complete event stream in insertion order, with elapsed timestamps; a full replay of what the operator saw
+- **`report.cost_breakdown`** — every dollar of API spend attributed to a model tier (Haiku/Sonnet, cached vs. fresh)
+- **`evalResults`** — the same run rescored against two baselines, so any claim about Vigil's precision/recall is checkable against the raw evidence
+
+Any downstream system — ServiceNow, Slack, Splunk itself — can consume this JSON directly. For deployed backends, this is what would post to a webhook after every completed run.
+
+---
+
+## 12. Populated Overview — Everything Together
 
 ![Overview — complete](./screenshots/06-overview-complete.png)
 
-Every card, populated, at the end of a real run. This is the demo view — the shot that shows Vigil in one frame:
+Every card, populated, at the end of a real completed run. This is the demo view — the frame that shows Vigil doing all of its work in one shot:
 
-- Forecast Strip still visible at top (proactive layer never sleeps)
-- FSM has walked the ESCALATING path
-- Tool Calls feed shows 5 tool invocations + 3 RAG memory hits + 2 state transitions
-- Evidence, Incident Report, both fully populated
-- Evaluator queued for the post-run comparison
-- Run History empty until the run reaches `Complete` state — this run is at `ESCALATING` but the app is still finishing the evaluator phase, which is why the status pill in the top-right reads `Running`
+- Forecast Strip still active at top (proactive layer never sleeps)
+- FSM has walked to `ESCALATING`
+- Tool Calls feed shows 5 MCP invocations + 3 RAG memory hits + FSM state transitions
+- Evidence and Incident Report both fully populated
+- Evaluator's three-column comparison is complete
+- Run History has 1 archived run available for Full Trace review
+
+Status pill: `Complete` (green). Total wall-clock: 45.5 s. Total tokens: 8,764. Total cost: $0.0427. This is what "one incident, fully investigated, fully audited" looks like as a single artifact.
 
 ---
 
@@ -201,6 +302,6 @@ cd ui && npm run dev &
 node <path-to>/capture.mjs ./workflow/screenshots
 ```
 
-The capture script is not committed to the repo — it's a scratchpad tool. If you want to add it as a permanent utility, move it to `scripts/capture-workflow-screenshots.mjs` and pin it in `package.json`.
+The capture script and `sample-trace.json` regeneration script are not committed to the repo — they're scratchpad tools. If you want to add them as permanent utilities, move them to `scripts/capture-workflow-screenshots.mjs` and pin them in `package.json`.
 
 Every run costs a small amount of Anthropic + Pinecone API budget (~$0.05–0.20 per full FSM run). Consider capturing idle-state screenshots only if you just need to refresh the layout.

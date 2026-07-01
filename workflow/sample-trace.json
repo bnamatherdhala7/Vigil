@@ -1,0 +1,387 @@
+{
+  "id": "run-1782947617618-wi9taf",
+  "scenarioMeta": {
+    "id": "packet_loss",
+    "label": "Packet Loss",
+    "incident_id": "INC-20240214-001",
+    "severity": "P2",
+    "site": "San Jose",
+    "title": "High packet loss on sj-catalyst-01 / GigE0/1",
+    "expected_path": "ESCALATING"
+  },
+  "startTimeMs": 1782947574468,
+  "endTimeMs": 1782947617618,
+  "durationMs": 43150,
+  "finalState": "ESCALATING",
+  "fsmHistory": [
+    "PRE_TRIAGE",
+    "TRIAGE",
+    "INVESTIGATING",
+    "ESCALATING"
+  ],
+  "feedItems": [
+    {
+      "kind": "forecast",
+      "id": "fc-0",
+      "timestamp_ms": 1782947574467,
+      "data": {
+        "metric": "CPU Utilization",
+        "device": "sj-catalyst-01",
+        "trigger_type": "trajectory",
+        "severity": "warning",
+        "projected_minutes_ahead": 110,
+        "message": "Slow upward drift — projected to approach 85% in ~110 min",
+        "confidence": 0.71,
+        "model": "CTSM + Chronos"
+      }
+    },
+    {
+      "kind": "forecast",
+      "id": "fc-1",
+      "timestamp_ms": 1782947574467,
+      "data": {
+        "metric": "Packet Drop Rate",
+        "device": "sj-catalyst-01 GigE0/1",
+        "trigger_type": "threshold",
+        "severity": "critical",
+        "projected_minutes_ahead": 8,
+        "message": "P50 forecast breaches 1.0% threshold in 8 min — investigate now",
+        "confidence": 0.88,
+        "model": "Chronos"
+      }
+    },
+    {
+      "kind": "state",
+      "id": "st-1782947574564-PRE_TRIAGE",
+      "timestamp_ms": 1782947574564,
+      "data": {
+        "from_state": "IDLE",
+        "to_state": "PRE_TRIAGE",
+        "reason": "Investigation started"
+      }
+    },
+    {
+      "kind": "pre_triage",
+      "id": "pt-2",
+      "timestamp_ms": 1782947574564,
+      "data": {
+        "alert_id": "ALT-20240214-001",
+        "alert_type": "interface_error_spike",
+        "confidence_band": "high",
+        "confidence_score": 1,
+        "signal_strength": 5,
+        "recommended_action": "investigate",
+        "suppression_reason": null,
+        "escalate_immediately": false,
+        "scoring_rationale": "base_score=0.55 | HIGH triggers: signal_count=3 (≥3 threshold); 2 correlated signal(s) on same device within 5 min; source_ip 10.14.22.87 appears in 3 signals | final_score=1.000 → band=high",
+        "tokens_used": 0
+      }
+    },
+    {
+      "kind": "state",
+      "id": "st-1782947574564-TRIAGE",
+      "timestamp_ms": 1782947574564,
+      "data": {
+        "from_state": "PRE_TRIAGE",
+        "to_state": "TRIAGE",
+        "reason": "Alert score above threshold — proceeding to investigation"
+      }
+    },
+    {
+      "kind": "rag",
+      "id": "rag-3",
+      "timestamp_ms": 1782947576189,
+      "data": {
+        "layer": "SPL",
+        "phase": "TRIAGE",
+        "query": "High packet loss on CI Catalyst Switch — San Jose High packet loss detected on CI Catalyst switch sj-catalyst-01 in San ",
+        "hits": [
+          {
+            "id": "spl-001",
+            "title": "packet_loss_egress",
+            "score": 0.494,
+            "text": "index=netops sourcetype=interface_stats device=\"$device$\" earliest=-15m | stats sum(drops) as drops, sum(bytes) as bytes by src_ip | eval drop_pct=round(drops/(drops+bytes)*100,2) | sort -drops",
+            "tags": [
+              "packet_loss",
+              "egress",
+              "drops"
+            ],
+            "phase": "TRIAGE",
+            "outcome": null
+          },
+          {
+            "id": "spl-020",
+            "title": "syslog_error_burst",
+            "score": 0.351,
+            "text": "index=netops sourcetype=syslog (severity=ERROR OR severity=CRITICAL) earliest=-15m | stats count as errors by device, severity | sort -errors | head 20",
+            "tags": [
+              "syslog",
+              "errors",
+              "burst"
+            ],
+            "phase": "TRIAGE",
+            "outcome": null
+          },
+          {
+            "id": "spl-003",
+            "title": "bgp_flap_detection",
+            "score": 0.323,
+            "text": "index=netops sourcetype=bgp_events device=\"$device$\" earliest=-2h | stats count as flaps, values(reason) as reasons by peer | where flaps >= 2 | sort -flaps",
+            "tags": [
+              "bgp",
+              "flap",
+              "routing"
+            ],
+            "phase": "TRIAGE",
+            "outcome": null
+          }
+        ]
+      }
+    },
+    {
+      "kind": "tool",
+      "id": "tc-4",
+      "timestamp_ms": 1782947577564,
+      "data": {
+        "id": "tc-4",
+        "tool": "search_indexes",
+        "input_preview": "['routing_logs network_telemetry syslog netflow']",
+        "result_preview": "6 indexes available",
+        "input_full": "{\n  \"query\": \"routing_logs network_telemetry syslog netflow\"\n}",
+        "result_full": "{\n  \"indexes\": [\n    {\n      \"name\": \"network_telemetry\",\n      \"size_mb\": 45200,\n      \"event_count\": 2847000,\n      \"earliest\": \"2024-01-01\",\n      \"latest\": \"2024-02-15\"\n    },\n    {\n      \"name\": \"security_logs\",\n      \"size_mb\": 12800,\n      \"event_count\": 891000,\n      \"earliest\": \"2024-01-01\",\n      \"latest\": \"2024-02-15\"\n    },\n    {\n      \"name\": \"ise_logs\",\n      \"size_mb\": 3200,\n      \"event_count\": 234000,\n      \"earliest\": \"2024-01-01\",\n      \"latest\": \"2024-02-15\"\n    },\n    {\n      \"name\": \"netflow\",\n      \"size_mb\": 78900,\n      \"event_count\": 15600000,\n      \"earliest\": \"2024-01-01\",\n      \"latest\": \"2024-02-15\"\n    },\n    {\n      \"name\": \"routing_logs\",\n      \"size_mb\": 8400,\n      \"event_count\": 1240000,\n      \"earliest\": \"2024-01-01\",\n      \"latest\": \"2024-02-15\"\n    },\n    {\n      \"name\": \"syslog\",\n      \"size_mb\": 22100,\n      \"event_count\": 8900000,\n      \"earliest\": \"2024-01-01\",\n      \"latest\": \"2024-02-15\"\n    }\n  ],\n  \"total\": 6\n}",
+        "duration_ms": 43,
+        "anomaly": false,
+        "timestamp": 1782947577564
+      }
+    },
+    {
+      "kind": "tool",
+      "id": "tc-5",
+      "timestamp_ms": 1782947577666,
+      "data": {
+        "id": "tc-5",
+        "tool": "get_network_topology",
+        "input_preview": "['sj-catalyst-01']",
+        "result_preview": "1 device(s)",
+        "input_full": "{\n  \"device_id\": \"sj-catalyst-01\",\n  \"site\": \"San Jose\"\n}",
+        "result_full": "{\n  \"devices\": [\n    {\n      \"device_id\": \"sj-catalyst-01\",\n      \"hostname\": \"sj-catalyst-01.corp.local\",\n      \"model\": \"Catalyst 9300\",\n      \"site\": \"San Jose\",\n      \"role\": \"access\",\n      \"interfaces\": [\n        \"GigE0/1\",\n        \"GigE0/2\",\n        \"GigE0/3\",\n        \"GigE0/24\",\n        \"TenGigE1/1\"\n      ],\n      \"uplinks\": [\n        \"sj-core-01\"\n      ],\n      \"vlans\": [\n        100,\n        200,\n        300\n      ]\n    }\n  ],\n  \"links\": [\n    {\n      \"from\": \"sj-catalyst-01:TenGigE1/1\",\n      \"to\": \"sj-core-01:TenGigE1/1\",\n      \"bandwidth_gbps\": 10\n    },\n    {\n      \"from\": \"sj-core-01:FortyGigE1/1\",\n      \"to\": \"sj-edge-01:TenGigE0/0/0\",\n      \"bandwidth_gbps\": 40\n    },\n    {\n      \"from\": \"sj-edge-01:GigE0/0\",\n      \"to\": \"upstream-isp-01:GigE0/0\",\n      \"bandwidth_gbps\": 1,\n      \"link_type\": \"wan_mpls\"\n    }\n  ],\n  \"total_devices\": 1\n}",
+        "duration_ms": 122,
+        "anomaly": false,
+        "timestamp": 1782947577666
+      }
+    },
+    {
+      "kind": "state",
+      "id": "st-1782947581340-INVESTIGATING",
+      "timestamp_ms": 1782947581340,
+      "data": {
+        "from_state": "TRIAGE",
+        "to_state": "INVESTIGATING",
+        "reason": "Data sources confirmed, RAG SPL patterns retrieved — gathering telemetry"
+      }
+    },
+    {
+      "kind": "rag",
+      "id": "rag-6",
+      "timestamp_ms": 1782947582053,
+      "data": {
+        "layer": "Incident",
+        "phase": "INVESTIGATING",
+        "query": "High packet loss on CI Catalyst Switch — San Jose High packet loss detected on CI Catalyst switch sj-catalyst-01 in San ",
+        "hits": [
+          {
+            "id": "inc-001",
+            "title": "INC-2024-0891",
+            "score": 0.601,
+            "text": "High packet loss on sw-core-01. Single source IP 192.168.4.17 at 68% egress. Firewall rule added to rate-limit source. NOC escalated to security team. Duration: 23min.",
+            "tags": [
+              "packet_loss",
+              "exfiltration",
+              "security",
+              "sw-core-01"
+            ],
+            "phase": null,
+            "outcome": "ESCALATING"
+          },
+          {
+            "id": "inc-016",
+            "title": "INC-2024-0199",
+            "score": 0.594,
+            "text": "Packet loss 3% on sw-core-01. Egress spread across 40 IPs. Root cause: QoS policy misconfiguration after change window. Reverted QoS policy.",
+            "tags": [
+              "packet_loss",
+              "qos",
+              "change_management",
+              "sw-core-01"
+            ],
+            "phase": null,
+            "outcome": "REMEDIATING"
+          },
+          {
+            "id": "inc-022",
+            "title": "INC-2024-0311",
+            "score": 0.59,
+            "text": "Packet loss on sw-access-22. Traced to VLAN 40 (IoT devices). Rogue device broadcasting malformed frames. Device isolated via port security.",
+            "tags": [
+              "packet_loss",
+              "iot",
+              "rogue",
+              "port_security"
+            ],
+            "phase": null,
+            "outcome": "ESCALATING"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "tool",
+      "id": "tc-7",
+      "timestamp_ms": 1782947584760,
+      "data": {
+        "id": "tc-7",
+        "tool": "get_telemetry_metrics",
+        "input_preview": "['sj-catalyst-01']",
+        "result_preview": "out_errors=2847  utilization=94.2%  anomaly=True",
+        "input_full": "{\n  \"device_id\": \"sj-catalyst-01\",\n  \"interface\": \"GigE0/1\",\n  \"time_window\": \"last 2 hours\"\n}",
+        "result_full": "{\n  \"device_id\": \"sj-catalyst-01\",\n  \"interface\": \"GigE0/1\",\n  \"time_window\": \"last 2 hours\",\n  \"metrics\": {\n    \"in_errors\": 12,\n    \"out_errors\": 2847,\n    \"drops\": 1923,\n    \"utilization_pct\": 94.2,\n    \"speed_mbps\": 1000,\n    \"status\": \"up\",\n    \"last_cleared\": \"2024-02-14T00:00:00Z\"\n  },\n  \"anomaly\": true\n}",
+        "duration_ms": 290,
+        "anomaly": true,
+        "timestamp": 1782947584760
+      }
+    },
+    {
+      "kind": "tool",
+      "id": "tc-8",
+      "timestamp_ms": 1782947585218,
+      "data": {
+        "id": "tc-8",
+        "tool": "run_spl_query",
+        "input_preview": "['index=network_telemetry device_id=\"sj-catalyst-01\" interface=\"GigE0/1\" | stats",
+        "result_preview": "avg_out_errors=1,931  avg_drops=1,238  spike_at=2024-02-14T14:30:00Z",
+        "input_full": "{\n  \"spl\": \"index=network_telemetry device_id=\\\"sj-catalyst-01\\\" interface=\\\"GigE0/1\\\" | stats avg(out_errors) avg(drops) by _time span=2m\",\n  \"time_window\": \"last 2 hours\",\n  \"index\": \"network_telemetry\"\n}",
+        "result_full": "{\n  \"query\": \"index=network_telemetry device_id=\\\"sj-catalyst-01\\\" interface=\\\"GigE0/1\\\" | stats avg(out_errors) avg(drops) by _time span=2m\",\n  \"stats\": {\n    \"avg_out_errors\": 1931,\n    \"avg_drops\": 1238,\n    \"spike_at\": \"2024-02-14T14:30:00Z\",\n    \"duration_mins\": 4,\n    \"note\": \"Asymmetric error pattern: out_errors >> in_errors suggests egress congestion\"\n  }\n}\n  \"events\": [3 events — see full output]",
+        "duration_ms": 473,
+        "anomaly": false,
+        "timestamp": 1782947585218
+      }
+    },
+    {
+      "kind": "tool",
+      "id": "tc-9",
+      "timestamp_ms": 1782947585621,
+      "data": {
+        "id": "tc-9",
+        "tool": "run_spl_query",
+        "input_preview": "['index=netflow device_id=\"sj-catalyst-01\" interface=\"GigE0/1\" direction=egress ",
+        "result_preview": "top_src=10.14.22.87  pct=71.2%  Single host accounts for 71.2% of egress — threshold is 60%",
+        "input_full": "{\n  \"spl\": \"index=netflow device_id=\\\"sj-catalyst-01\\\" interface=\\\"GigE0/1\\\" direction=egress | stats sum(bytes_out) by src_ip | sort -bytes_out\",\n  \"time_window\": \"last 2 hours\",\n  \"index\": \"netflow\"\n}",
+        "result_full": "{\n  \"query\": \"index=netflow device_id=\\\"sj-catalyst-01\\\" interface=\\\"GigE0/1\\\" direction=egress | stats sum(bytes_out) by src_ip | sort -bytes_out\",\n  \"stats\": {\n    \"total_bytes\": 12567891,\n    \"top_src\": \"10.14.22.87\",\n    \"top_src_pct\": 71.2,\n    \"anomaly\": \"Single host accounts for 71.2% of egress \\u2014 threshold is 60%\"\n  }\n}\n  \"events\": [3 events — see full output]",
+        "duration_ms": 396,
+        "anomaly": true,
+        "timestamp": 1782947585621
+      }
+    },
+    {
+      "kind": "state",
+      "id": "st-1782947589115-ESCALATING",
+      "timestamp_ms": 1782947589115,
+      "data": {
+        "from_state": "INVESTIGATING",
+        "to_state": "ESCALATING",
+        "reason": "Transition: INVESTIGATING → ESCALATING"
+      }
+    }
+  ],
+  "report": {
+    "incident_id": "INC-20240214-001",
+    "final_state": "ESCALATING",
+    "hypothesis": "sj-catalyst-01 GigE0/1: 2,847 out_errors, 1,923 drops, 94.2% util; src_ip 10.14.22.87 drives 71.2% egress (exceeds 60% threshold) with 847 unique dest IPs—potential exfiltration or DDoS source.",
+    "evidence": [
+      "sj-catalyst-01 GigE0/1: 2,847 out_errors, 1,923 drops, 94.2% util; src_ip 10.14.22.87 drives 71.2% egress (exceeds 60% threshold) with 847 unique dest IPs—potential exfiltration or DDoS source."
+    ],
+    "tool_calls": 5,
+    "recommended_action": "sj-catalyst-01 GigE0/1: 2,847 out_errors, 1,923 drops, 94.2% util; src_ip 10.14.22.87 drives 71.2% egress (exceeds 60% threshold) with 847 unique dest IPs—potential exfiltration or DDoS source.",
+    "confidence": 0.85,
+    "total_tokens": 8698,
+    "input_tokens": 7364,
+    "output_tokens": 1334,
+    "duration_secs": 14.58,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "haiku_input_tokens": 7364,
+    "haiku_output_tokens": 1334,
+    "sonnet_input_tokens": 0,
+    "sonnet_output_tokens": 0,
+    "cost_usd": 0.014034,
+    "cost_breakdown": {
+      "haiku_input_usd": 0.007364,
+      "haiku_output_usd": 0.00667,
+      "sonnet_input_usd": 0,
+      "sonnet_output_usd": 0,
+      "cache_write_usd": 0,
+      "cache_read_usd": 0,
+      "total_usd": 0.014034
+    }
+  },
+  "evalResults": {
+    "incident_id": "INC-20240214-001",
+    "investigation": {
+      "final_state": "ESCALATING",
+      "tool_calls": 5,
+      "total_tokens": 8698,
+      "cost_usd": 0.0421,
+      "precision": 1,
+      "recall": 0.778,
+      "actionability": 0.75,
+      "tool_efficiency": 1,
+      "composite": 0.869,
+      "duration_secs": 14.58
+    },
+    "generic": {
+      "total_tokens": 1993,
+      "cost_usd": 0.0183,
+      "precision": 0.556,
+      "recall": 0.556,
+      "actionability": 0.5,
+      "composite": 0.628
+    },
+    "constrained": {
+      "total_tokens": 1409,
+      "cost_usd": 0.0099,
+      "precision": 1,
+      "recall": 0.778,
+      "actionability": 0.75,
+      "composite": 0.869,
+      "output": {
+        "incident_id": "INC-20240214-001",
+        "final_state": "ESCALATING",
+        "hypothesis": "sj-catalyst-01 GigE0/1 is the source of a critical traffic anomaly driven by 10.14.22.87, which is generating 71.2% of egress traffic to 847 unique destinations, indicative of active data exfiltration or DDoS participation.",
+        "evidence": [
+          "sj-catalyst-01 GigE0/1 utilization at 94.2% on a 1000 Mbps link over the last 2 hours",
+          "2,847 out_errors and 1,923 drops recorded on GigE0/1 since counter clear at 2024-02-14T00:00:00Z",
+          "src_ip 10.14.22.87 accounts for 71.2% of egress traffic, exceeding the 60% anomaly threshold",
+          "10.14.22.87 communicating with 847 unique destination IPs, consistent with scanning, exfiltration, or DDoS amplification",
+          "Only 12 in_errors vs 2,847 out_errors, confirming the problem is egress-bound and host-originated",
+          "network_telemetry index contains 2,847,000 events spanning 2024-01-01 to 2024-02-15, anomaly flag set to True for this interface"
+        ],
+        "threat_ip": "10.14.22.87",
+        "threat_pct_of_egress": 71.2,
+        "spike_at": "14:00 UTC",
+        "recommended_action": "Isolate 10.14.22.87 by applying an ACL on sj-catalyst-01 GigE0/1 to block all egress traffic from that host pending forensic investigation",
+        "confidence": 0.91
+      }
+    },
+    "token_savings_pct": 83.8
+  },
+  "mttdData": {
+    "mttd_vigil_s": 8,
+    "mttr_vigil_s": 14.58,
+    "mttd_baseline_s": 900,
+    "mttr_baseline_s": 2820,
+    "mttd_speedup_pct": 99.1,
+    "mttr_speedup_pct": 99.5,
+    "headline": "Vigil resolves network incidents 99.4% faster than manual baseline (16s vs 47.0min)."
+  },
+  "totalTokens": 8698
+}
