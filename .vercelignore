@@ -1,0 +1,23 @@
+# Python source — must be excluded so Vercel doesn't deploy api/ as
+# serverless functions or auto-detect Python from pyproject.toml.
+
+api/
+phase1_mcp/
+phase2_5_classifier/
+phase2_agent/
+phase3_evaluator/
+vigil/
+tests/
+demo/
+scripts/
+data/
+
+*.py
+*.ipynb
+*.pyc
+__pycache__/
+
+pyproject.toml
+requirements.txt
+setup.py
+setup.cfg

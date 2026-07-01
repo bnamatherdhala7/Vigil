@@ -1,0 +1,9 @@
+{
+  "name": "vigil-root",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Root marker for Vercel Node.js detection. The actual UI lives in ui/. See docs/deployment.md.",
+  "scripts": {
+    "build": "cd ui && npm install && npm run build"
+  }
+}
