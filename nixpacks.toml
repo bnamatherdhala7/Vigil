@@ -1,0 +1,21 @@
+# Railway/Nixpacks build config for the Vigil FastAPI backend.
+#
+# Local dev is unaffected — this file is only read by Nixpacks (Railway's builder).
+# Local dev continues to use `pip install -e ".[dev]"` off pyproject.toml.
+#
+# We explicitly install from pyproject.toml so Nixpacks picks up the full
+# runtime dep set (fastapi, uvicorn, mcp, transitions, pydantic, ...) rather
+# than the intentionally minimal requirements.txt.
+
+[phases.setup]
+nixPkgs = ["python311", "gcc"]
+
+[phases.install]
+cmds = [
+  "python -m venv --copies /opt/venv",
+  ". /opt/venv/bin/activate && python -m pip install --upgrade pip",
+  ". /opt/venv/bin/activate && python -m pip install .",
+]
+
+[start]
+cmd = ". /opt/venv/bin/activate && uvicorn api.server:app --host 0.0.0.0 --port $PORT"

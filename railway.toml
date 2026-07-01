@@ -1,0 +1,14 @@
+# Railway deployment config for the Vigil FastAPI backend.
+#
+# Local dev is unaffected — this file is only read by Railway.
+# The `python -m api.server` block at the bottom of api/server.py continues to
+# work for `python -m api.server` on localhost:8000.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+# Nixpacks provides the venv (see nixpacks.toml). Railway injects $PORT at runtime.
+startCommand = ". /opt/venv/bin/activate && uvicorn api.server:app --host 0.0.0.0 --port $PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

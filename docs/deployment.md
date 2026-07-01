@@ -103,21 +103,67 @@ Open `http://localhost:5173`. The Run Investigation button now hits the local ba
 
 ---
 
-## Future: Deploying the Backend
+## Deploying the Backend to Railway
 
-When ready to deploy the backend publicly, Render, Railway, or Fly.io all work for a FastAPI + Python service. The flow:
+**Why Railway** (not Vercel): the FSM commander is a long-running stateful process — an investigation can be tens of seconds of Claude calls, MCP tool calls, and Pinecone lookups. Serverless platforms like Vercel Functions have short duration limits and cold starts that don't fit this workload. Railway runs a persistent container, deploys on `git push`, and has a generous free tier.
 
-1. Deploy backend → get its public URL (e.g., `https://vigil-backend.fly.dev`)
-2. Set backend env vars on the host (Anthropic key, Pinecone key, Splunk credentials)
-3. Update the UI to point at the backend — either via a `VITE_API_BASE` env var or a Vercel rewrite in `ui/vercel.json`:
+### Prerequisites
+
+- Railway account (free tier is sufficient)
+- The GitHub repo already connected
+
+### Files in this repo that Railway uses
+
+| File | Purpose |
+|---|---|
+| `nixpacks.toml` | Tells Nixpacks (Railway's builder) to install Python 3.11 and run `pip install .` off `pyproject.toml` — picks up the full runtime dep set. |
+| `railway.toml` | Start command (`uvicorn api.server:app --host 0.0.0.0 --port $PORT`), restart policy. |
+
+**Local dev is unaffected** — neither file is read by `pip`, `python -m api.server`, or Vite. Both files are only consumed by Railway during build/deploy.
+
+### Steps
+
+1. **Create the project.** [railway.app/new](https://railway.app/new) → **Deploy from GitHub repo** → select `bnamatherdhala7/Vigil`. Railway detects `nixpacks.toml` + `railway.toml` and starts the first build.
+
+2. **Set environment variables.** In the Railway project → **Variables** tab, add every key from `.env.example`:
+   - `ANTHROPIC_API_KEY`
+   - `PINECONE_API_KEY`, `PINECONE_SPL_INDEX`, `PINECONE_INCIDENT_INDEX`, `PINECONE_ENVIRONMENT`
+   - `OPENAI_API_KEY`
+   - `SPLUNK_URL`, `SPLUNK_TOKEN`, `SPLUNK_MCP_URL` (optional — the app runs without Splunk connectivity if the MCP endpoint is unreachable)
+
+3. **Trigger a redeploy** so the new env vars take effect. Railway → **Deployments** → **Redeploy**.
+
+4. **Get the public URL.** Railway → **Settings** → **Domains** → **Generate Domain**. You'll get something like `vigil-production.up.railway.app`. Verify it:
+   ```bash
+   curl https://<your-railway-url>/api/scenarios
+   # Should return JSON — a list of scenario IDs
+   ```
+
+### Wiring the Vercel UI to the Railway backend
+
+Once you have a working Railway URL, update `ui/vercel.json` to proxy `/api/*` requests through Vercel to Railway:
 
 ```json
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://vigil-backend.fly.dev/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://<your-railway-url>/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
   ]
 }
 ```
 
-That's the path forward; not needed for the showcase UI deployment.
+Commit + push. Vercel auto-redeploys. The **Run Investigation** button now hits Railway, and the friendly "Backend not reachable" banner disappears.
+
+### Local dev after wiring to Railway
+
+**Nothing changes.** Local dev continues to use the Vite proxy from `ui/vite.config.ts` which forwards `/api/*` to `http://localhost:8000`. That proxy is *only* active in `npm run dev` mode — Vercel builds use the `vercel.json` rewrites instead. The two paths do not interfere.
+
+To flip the UI back to a purely local backend on a Vercel deploy, delete the `/api/(.*)` rewrite from `ui/vercel.json`; the UI falls back to showing the "Backend not reachable" banner.
