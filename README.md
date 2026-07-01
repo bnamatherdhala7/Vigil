@@ -2,13 +2,17 @@
 
 > Cisco and Splunk shipped the tools. Nobody shipped the brain.
 
+**🌐 Live demo:** [vigil-5vo3-14jb5xbig-nama7vijay-6218s-projects.vercel.app](https://vigil-5vo3-14jb5xbig-nama7vijay-6218s-projects.vercel.app)
+*(UI-only deployment — Forecast Strip, FSM diagram, and Run History work in the browser. Run Investigation requires the Python backend running locally; see [`docs/deployment.md`](./docs/deployment.md#running-locally-full-stack).)*
+
 Vigil is a Finite State Machine agent that sits on top of Splunk's Model Context Protocol server and Cisco Catalyst Center. It autonomously investigates network incidents — deciding which tools to call, in what order, and whether to escalate or self-heal — backed by Pinecone Retrieval-Augmented Generation that retrieves vetted Splunk Processing Language patterns and past incident memory at each investigation step.
 
 **Documents in this repo:**
-- **[`docs/prd.md`](./docs/prd.md)** — end-to-end Product Requirements Document for VP-level review (story · problems · platform · governance · roadmap · results)
+- **[`docs/prd.md`](./docs/prd.md)** — end-to-end Product Requirements Document for VP-level review (10-min read)
 - **[`docs/model-evaluation.md`](./docs/model-evaluation.md)** — Cisco Time Series Model benchmark + 4-priority productization roadmap
 - **[`docs/competitive-landscape.md`](./docs/competitive-landscape.md)** — 25+ vendor competitive deep-dive across 5 tiers
-- **[`docs/splunk-ai-foundations-demo.md`](./docs/splunk-ai-foundations-demo.md)** — 15-minute demo script for the Splunk AI Foundations role
+- **[`docs/deployment.md`](./docs/deployment.md)** — how the app is deployed (Vercel frontend + local backend)
+- **[`docs/archive/`](./docs/archive/)** — historical working documents (prior PRD versions, briefing notes)
 - This README — engineer-facing: how the system works, how to run it, what's in the codebase
 
 ---
