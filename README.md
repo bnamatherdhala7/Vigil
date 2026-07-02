@@ -522,25 +522,45 @@ ui/                  # React war-room dashboard
 
 ## Quick Start
 
+### Prerequisites
+
+- **Python 3.11 or newer.** The `mcp>=1.3.0` dependency requires it — macOS system Python 3.9 will fail. On macOS: `brew install python@3.11` or use Anaconda's 3.11+.
+- **Node 18 or newer.** Any modern Node install; `brew install node` works.
+- Accounts for Anthropic, Pinecone, and OpenAI (embeddings-only). Optional: Splunk Cloud with the [MCP Server app](https://splunkbase.splunk.com/app/7931) installed.
+
+### Setup
+
 ```bash
-# 1. Install dependencies
+# 1. Clone
+git clone https://github.com/bnamatherdhala7/Vigil.git
+cd Vigil
+
+# 2. Python venv — strongly recommended
+#    (isolates Vigil from any system-Python / Anaconda mismatch)
+python3.11 -m venv .venv
+source .venv/bin/activate                 # zsh/bash
 pip install -e ".[dev]"
 
-# 2. Set credentials
+# 3. Credentials
 cp .env.example .env
-# Required: ANTHROPIC_API_KEY
-# For RAG:  PINECONE_API_KEY, OPENAI_API_KEY
+# Fill in ANTHROPIC_API_KEY, PINECONE_API_KEY, OPENAI_API_KEY (minimum).
+# See the Credentials table below for optional keys.
 
-# 3. Seed Pinecone (run once)
+# 4. Seed Pinecone (only on a NEW Pinecone account — skip if indexes exist)
 python scripts/seed_pinecone.py
 
-# 4. Start backend
-python -m api.server
+# 5. Start backend
+python -m api.server                      # FastAPI on :8000
 
-# 5. Start frontend
-cd ui && npm install && npm run dev
-# Opens at http://localhost:5173
+# 6. Start UI (in a second terminal)
+cd ui && npm install && npm run dev       # Vite on :5173
 ```
+
+Open [`http://localhost:5173`](http://localhost:5173) and click **Run Investigation**.
+
+### New-laptop reproducibility
+
+Everything above works on a fresh laptop provided you bring your `.env`. Store it in 1Password / Bitwarden — it is intentionally `.gitignored` and cannot be recovered from the repo. If you lose it you must regenerate every key from the providers' consoles. See [`docs/deployment.md`](./docs/deployment.md) for the deployed-app path (Vercel UI + Railway backend).
 
 ## Credentials
 

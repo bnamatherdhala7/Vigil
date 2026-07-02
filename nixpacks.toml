@@ -4,8 +4,8 @@
 # Local dev continues to use `pip install -e ".[dev]"` off pyproject.toml.
 #
 # We explicitly install from pyproject.toml so Nixpacks picks up the full
-# runtime dep set (fastapi, uvicorn, mcp, transitions, pydantic, ...) rather
-# than the intentionally minimal requirements.txt.
+# runtime dep set (fastapi, uvicorn, mcp, transitions, pydantic, ...).
+# pyproject.toml is the single source of truth for dependencies.
 
 [phases.setup]
 nixPkgs = ["python311", "gcc"]

@@ -13,6 +13,7 @@ build/
 node_modules/
 .cache/
 *.mjs
+!scripts/*.mjs
 
 # Conversation exports
 CLAUDE*.md
