@@ -1,40 +1,103 @@
 # Time Series Foundation Models — Comparative Study
 
-**As of July 2026 | Sources: HuggingFace model cards, arXiv papers, company blogs, GIFT-Eval leaderboard**
+**As of July 2, 2026 | Sources: HuggingFace model cards, arXiv papers, company blogs, GIFT-Eval leaderboard (live as of Jul 2, 2026 3:06 PM)**
+
+---
+
+## Metric Definitions
+
+Before reading any benchmark table, these are the terms used throughout this document:
+
+| Abbrev. | Full Name | What it measures | Good value means | Example |
+|---|---|---|---|---|
+| **MAE** | Mean Absolute Error | Average absolute difference between forecast and actual | Lower | Forecast says CPU will be 72%, actual is 80%. MAE = 8%. An MAE of 0.05 on a normalized series means you're off by 5% on average. |
+| **MASE** | Mean Absolute Scaled Error | MAE divided by MAE of a naïve seasonal baseline (predicting last season's value). Normalizes across series with different scales. | < 1.0 means beating naive; < 0.75 is good | MASE = 0.68 means the model is 32% more accurate than just repeating yesterday's value. |
+| **MSE** | Mean Squared Error | Average squared error — penalizes large errors more heavily than MAE | Lower | MSE = 0.38 on ETTh1. Sensitive to outlier spikes — important for anomaly-adjacent tasks. |
+| **CRPS** | Continuous Ranked Probability Score | Measures quality of the full predicted probability distribution, not just the point forecast. Rewards well-calibrated uncertainty. | Lower | CRPS = 0.46 means the model's confidence intervals are well-calibrated. A model that says "80% confident" should be right 80% of the time. |
+| **WQL** | Weighted Quantile Loss | Evaluates accuracy across multiple quantiles (e.g., 10th, 50th, 90th percentile). GIFT-Eval's primary probabilistic metric. | Lower | WQL = 0.45 means the model's prediction intervals at all confidence levels are accurate. Subsumes CRPS when computed over many quantiles. |
+| **sMAPE** | Symmetric Mean Absolute Percentage Error | Percentage-based error symmetric around actual and forecast. Used in M4 competition. | Lower; 0 = perfect | sMAPE of 15.8 means forecasts are off by ~15.8% on average. Used in M4 because it avoids division-by-zero. |
+| **WRMSSE** | Weighted Root Mean Squared Scaled Error | M5 competition metric. Weights errors by product sales volume — errors on high-volume items penalized more. | Lower | WRMSSE 0.611 vs 0.789 (DeepAR) = 22% improvement on M5 demand forecasting. |
+| **F1 Score** | Precision × Recall harmonic mean | For anomaly detection: proportion of true anomalies caught (recall) vs. false alarms (precision). | Higher; 1.0 = perfect | F1 = 0.93 means the model catches 94% of real anomalies and only raises 7% false alarms. |
+| **Win Rate** | % of dataset-horizon pairs where the model beats a baseline | Across GIFT-Eval's 97 test cases, how often does the model rank #1 in head-to-head comparisons? | Higher | Chronos-2 win rate 79.8% = it is the most accurate model on 79 out of 100 tasks. |
+| **Avg Rank** | Average rank position across all leaderboard slices | Lower rank = more consistently good; avoids inflated by single-domain dominance | Lower | Rank 17.82 (Toto FnF) vs 30.88 (Chronos-2) — Toto is more consistent even if Chronos wins more individual tasks. |
 
 ---
 
 ## Executive Summary Table
 
-| Model | Company | Latest Version | Params | Architecture | Open Source | Primary Use Case | GIFT-Eval Rank |
+| Model | Company | Latest Version | Params | Architecture | Open Source | Primary Use Case | GIFT-Eval Rank (Jul 2026) |
 |---|---|---|---|---|---|---|---|
-| **Chronos-2** | Amazon | Oct 2025 | 8M–710M | Encoder-decoder (T5) | ✅ Apache 2.0 | General (finance, retail, IoT) | **#1** (79.8% win rate) |
-| **TimesFM 2.5** | Google | Sep 2025 | 200M | Decoder-only (patched) | ✅ Apache 2.0 | General, cloud infra | **#2** |
-| **Toto 2.0** | Datadog | Apr 2026 | 4M–2.5B | Decoder-only (factorized space-time) | ✅ Apache 2.0 | Observability / AIOps | **#3** |
-| **Moirai 2.0** | Salesforce | Aug 2025 | 14M–311M | Decoder-only transformer | ✅ Apache 2.0 (code) / CC-BY-NC-4.0 (weights) | General enterprise | **#5–6** |
-| **Cisco TSFM** | Cisco/Splunk | Nov 2025 | 500M | Decoder-only (multiresolution) | ✅ Apache 2.0 | Network/IT observability | Not ranked |
-| **Cisco APEX** | Cisco Research | Jun 2026 | 269M / 10.5M | Decoder-only (channel-dep.) | Research only | Wireless AP telemetry | Not ranked |
+| **Chronos-2** | Amazon | Oct 2025 | 8M–710M | Encoder-decoder (T5) | ✅ Apache 2.0 | General (finance, retail, IoT) | **#25 overall / #1 pretrained (win rate)** |
+| **Toto 2.0** | Datadog | Apr 2026 | 4M–2.5B | Decoder-only (factorized space-time) | ✅ Apache 2.0 | Observability / AIOps | **#17 overall / #2 pretrained** |
+| **TimesFM 2.5** | Google | Sep 2025 | 200M | Decoder-only (patched) | ✅ Apache 2.0 | General, cloud infra | **#32 overall / #4 pretrained** |
+| **Moirai 2.0** | Salesforce | Aug 2025 | 14M–311M | Decoder-only transformer | ✅ Apache 2.0 (code) / CC-BY-NC-4.0 (weights) | General enterprise | **#51 overall** |
+| **Cisco TSFM** | Cisco/Splunk | Nov 2025 | 500M | Decoder-only (multiresolution) | ✅ Apache 2.0 | Network/IT observability | **Not submitted** |
+| **Cisco APEX** | Cisco Research | Jun 2026 | 269M / 10.5M | Decoder-only (channel-dep.) | Research only | Wireless AP telemetry | **Not submitted** |
 | **Time-MoE** | Princeton/Squirrel AI | ICLR 2025 | 2.4B total (1.1B active) | Decoder-only + sparse MoE | ✅ Apache 2.0 | General zero-shot | Top tier |
 | **TimeGPT** | Nixtla | 2024+ | Undisclosed | Encoder-decoder | ❌ API only | Retail, energy, finance | Not on leaderboard |
 | **MOMENT** | CMU Auton Lab | ICML 2024 | 385M | T5 encoder (masked) | ✅ MIT | Multi-task research | ICML 2024 |
 | **TiDE** | Google Research | 2023 | Small (per-dataset) | Pure MLP | ✅ Apache 2.0 | Long-horizon + covariates | N/A (supervised) |
-| **Lag-Llama** | Academic | Feb 2024 | 2.45M | Decoder-only (lag features) | ✅ Apache 2.0 | Probabilistic few-shot | Lower tier |
+| **Lag-Llama** | Academic | Feb 2024 | 2.45M | Decoder-only (lag features) | ✅ Apache 2.0 | Probabilistic few-shot | **#97 of 99** |
 | **ElasTST** | Microsoft Research Asia | NeurIPS 2024 | — | Encoder-only (non-autoregressive) | ✅ (github.com/microsoft/ProbTS) | Horizon-elastic supervised | N/A |
 
 ---
 
-## GIFT-Eval Leaderboard (Latest, ~Q4 2025)
+## GIFT-Eval Leaderboard — July 2, 2026 (Live)
 
-> GIFT-Eval: 55 real-world datasets, 97 test cases, multi-domain
+**Source**: [tsfm.ai/benchmarks/gift-eval](https://tsfm.ai/benchmarks/gift-eval) — 99 models, auto-refreshed every 12 hours. Last read: July 2, 2026 3:06 PM.
 
-| Rank | Model | Win Rate | Skill Score (WQL) |
-|---|---|---|---|
-| 1 | **Chronos-2** (Amazon) | 79.8% | 46.6% |
-| 2 | **TimesFM 2.5** (Google) | 77.5% | — |
-| 3 | **Toto 1.0** (Datadog) | 60.9% | 41.9% |
-| 4 | TiRex / FlowState | — | — |
-| 5–6 | **Moirai 2.0** (Salesforce) | 56.0% | 40.9% |
-| Lower | Lag-Llama, MOMENT | — | — |
+> **What is GIFT-Eval?** 55 real-world datasets, 97 test cases, 7 domains, 10 frequencies. Models ranked by average rank position across all slices (lower = more consistent). Separate MASE rank (point accuracy) and CRPS rank (probabilistic accuracy).
+
+### The Headline Shift: Agentic Systems Now Dominate
+
+The top 15 spots on GIFT-Eval are **almost entirely agentic orchestration systems** — multi-model ensemblers and LLM-driven forecast selectors — not individual foundation models. This is the most important structural shift since Q4 2025.
+
+### Full Leaderboard — Top 35 (July 2, 2026)
+
+| Overall Rank | Model | Category | Avg MASE Rank | Avg CRPS Rank | MASE | CRPS |
+|---|---|---|---|---|---|---|
+| 1 | **Cobra-Agent** (Dalpha AI) | Agentic | 16.05 | 15.30 | 0.68 | 0.46 |
+| 2 | **Prism** (Birla AI Labs) | Agentic | 17.63 | 17.15 | 0.68 | 0.47 |
+| 3 | **Toto-2.0-FnF** (Datadog) | Agentic | 17.82 | 17.19 | 0.68 | 0.46 |
+| 4 | **RAES-Conductance-Ensemble** (CSUN) | Agentic | 18.32 | 18.13 | 0.66 | 0.46 |
+| 5 | **Taichu-TimeSeries-Agent** (zidongtaichu) | Agentic | 19.20 | 20.03 | 0.67 | 0.46 |
+| 6 | **metis-autocast** | Agentic | 19.52 | 16.35 | 0.68 | 0.46 |
+| 7 | **Toto-2.0-2.5B-FT** (Datadog) | Fine-tuned | 20.11 | 18.66 | 0.68 | 0.46 |
+| 8 | **TSOrchestra** | Agentic | 20.18 | 18.55 | 0.68 | 0.47 |
+| 9 | **DeOSAlphaTimeGPTPredictor-2025** | Zero-shot | 20.87 | 19.06 | 0.68 | 0.47 |
+| 10 | **TimeRouter** | Agentic | 22.19 | 24.57 | 0.67 | 0.47 |
+| 11 | **RAES-Conductance-Ensemble-V** | Agentic | 22.25 | 22.13 | 0.67 | 0.46 |
+| 12 | **MoiraiAgent-leaking** | Agentic | 22.35 | 25.00 | 0.68 | 0.47 |
+| 13 | **MoiraiAgent** (Salesforce) | Agentic | 24.27 | 26.04 | 0.69 | 0.48 |
+| 14 | **Credence** | Agentic | 24.35 | 21.53 | 0.69 | 0.47 |
+| 15 | **Samay** | Agentic | 26.86 | 23.63 | 0.70 | 0.48 |
+| 16 | **STRIDE + Chronos-2** (Amazon) | Pretrained ensemble | 27.73 | 22.80 | 0.67 | **0.45** |
+| **17** | **Toto-2.0-2.5B** **(Datadog)** | **Pretrained** | **27.76** | **26.91** | **0.70** | **0.48** |
+| 22 | **STRIDE + Timer-S1** | Pretrained ensemble | 28.72 | 26.38 | 0.67 | 0.46 |
+| **25** | **Chronos-2** **(Amazon)** | **Pretrained** | **30.88** | **30.82** | **0.70** | **0.49** |
+| **29** | **Granite-FlowState-r1.1** **(IBM)** | **Zero-shot** | **34.18** | **34.27** | **0.70** | **0.49** |
+| 30 | **Timer-S1** | Pretrained | 34.28 | 34.32 | 0.69 | 0.49 |
+| **32** | **TimesFM-2.5** **(Google)** | **Zero-shot** | **34.87** | **33.41** | **0.71** | **0.49** |
+| **51** | **Moirai-2.0** **(Salesforce)** | **Pretrained** | **48.20** | **45.52** | **0.73** | **0.52** |
+| 97 | **Lag-Llama** | Pretrained | 88.71 | 85.75 | 1.23 | 0.88 |
+| — | **Cisco TSFM** | — | — | — | — | — |
+| — | **MOMENT** | — | — | — | — | — |
+
+### Pretrained / Zero-Shot Only — Ranked (What Matters for Foundation Model Comparison)
+
+| Pretrained Rank | Model | Company | MASE | CRPS | MASE Rank | CRPS Rank |
+|---|---|---|---|---|---|---|
+| 1 | **Toto-2.0-2.5B** | Datadog | 0.70 | 0.48 | 27.76 | 26.91 |
+| 2 | **STRIDE + Chronos-2** | Amazon | **0.67** | **0.45** | 27.73 | 22.80 |
+| 3 | **Chronos-2** | Amazon | 0.70 | 0.49 | 30.88 | 30.82 |
+| 4 | **Granite-FlowState-r1.1** | IBM | 0.70 | 0.49 | 34.18 | 34.27 |
+| 5 | **Timer-S1** | — | 0.69 | 0.49 | 34.28 | 34.32 |
+| 6 | **TimesFM-2.5** | Google | 0.71 | 0.49 | 34.87 | 33.41 |
+| 7 | **Moirai-2.0** | Salesforce | 0.73 | 0.52 | 48.20 | 45.52 |
+| — | **Cisco TSFM** | Cisco | — | — | — | — |
+| Last | **Lag-Llama** | Academic | 1.23 | 0.88 | 88.71 | 85.75 |
+
+> **Key insight**: Toto-2.0 leads on consistency (avg rank), while STRIDE+Chronos-2 leads on raw accuracy (lowest MASE 0.67, CRPS 0.45). IBM's Granite-FlowState at #4 is a notable new entrant. Cisco is absent entirely.
 
 ---
 
@@ -580,6 +643,137 @@ For the FSM incident commander on SP/Cisco network telemetry:
 
 ---
 
+## Strategic Recommendations: What Cisco Should Do in the Next 12 Months
+
+**Based on competitor gap analysis as of July 2, 2026.**
+
+---
+
+### The Macro Signal: The Playing Field Just Changed
+
+The GIFT-Eval leaderboard as of today has a single unmistakable story: **13 of the top 15 slots are agentic orchestration systems, not individual foundation models.** Datadog's Toto-2.0-FnF (an agentic ensemble) sits at #3. Salesforce's MoiraiAgent is at #13. The era of evaluating "the model" is over — the winner is now "the system around the model."
+
+Cisco has a massive structural advantage here that it is not yet exploiting: **Vigil already is an agentic FSM system built to orchestrate tools over SP/Splunk telemetry.** Cisco is one integration step away from entering the agentic tier of this leaderboard. Every competitor is building what Cisco already has; Cisco just needs to connect it to the model layer.
+
+---
+
+### Priority 1 — Submit to GIFT-Eval and the TIME Benchmark (Q3 2026)
+**What competitors are doing**: Every credible model is on the leaderboard. IBM Granite at #29. Even Lag-Llama (2.45M params, academic project) is at #97. Cisco TSFM is not listed at all.
+
+**The gap**: Without a GIFT-Eval submission, Cisco has no external credibility for TSFM. The Splunk technical report uses a proprietary benchmark (MAE 0.4788 vs TimesFM's 0.6265) that the outside world cannot reproduce or trust.
+
+**What to do**:
+- Submit Cisco TSFM v1.0 (when released) to GIFT-Eval using the non-leaking test split
+- Submit to the TIME leaderboard (50 fresh datasets, zero data leakage by construction — [huggingface.co/spaces/Real-TSF/TIME-leaderboard](https://huggingface.co/spaces/Real-TSF/TIME-leaderboard))
+- Publish the promised public observability benchmark (promised "early 2026" in the technical report, still not released as of July 2026) — this is overdue
+
+---
+
+### Priority 2 — Build a Cisco Agentic Forecaster (Q3–Q4 2026)
+**What competitors are doing**: Salesforce wrapped Moirai in an LLM orchestration loop and jumped from #51 to #13 on the leaderboard. Datadog wrapped Toto-2.0 in an ensemble agent and jumped from #17 to #3. Amazon's best result (#16) is STRIDE+Chronos-2, a prompted ensemble wrapper — not Chronos-2 alone.
+
+**The gap**: The raw TSFM is no longer the competitive unit. The agentic system is.
+
+**What to do**:
+- Wrap Cisco TSFM in a Vigil-style FSM orchestrator that: selects context window resolution automatically, runs multi-model ensembles on uncertainty, escalates to APEX for network-domain telemetry, uses ThousandEyes topology as covariate input
+- Submit this as "Cisco Agentic Forecaster" to GIFT-Eval — this alone could move Cisco from "absent" to top-20
+- Vigil's existing FSM (IDLE → TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING → ESCALATING → RESOLVED) is the right skeleton; add the model-selection and ensemble layer between TRIAGE and INVESTIGATING
+
+---
+
+### Priority 3 — Release APEX-Edge as Open Weights (Q4 2026)
+**What competitors are doing**: Datadog published all 5 Toto-2.0 sizes (4M to 2.5B) under Apache 2.0. Amazon published Chronos-Bolt (8M to 710M). Google published TimesFM at multiple sizes. IBM published Granite-TTM at 1–5M.
+
+**The gap**: Cisco APEX-Edge is 10.5M parameters — smaller than Chronos-Bolt-Tiny, runs on ARM Cortex-A76, achieves F1 0.89 on wireless anomaly detection. It is the **only edge-deployable network-native TSFM in existence**. But it is research-only with no weights released.
+
+**What to do**:
+- Open-source APEX-Edge weights on HuggingFace under Apache 2.0
+- Build an inference SDK for Cisco Catalyst and Meraki hardware (IOS XE, Meraki dashboard API)
+- This is Cisco's moat that no one else can replicate — Google, Datadog, and Amazon have no network hardware to deploy on. Releasing it turns APEX-Edge into a de facto standard for network-edge inference.
+
+---
+
+### Priority 4 — Add Multivariate and Covariate Support to TSFM (Q3 2026)
+**What competitors are doing**:
+- Chronos-2 (Oct 2025): multivariate + past and future covariates, group attention
+- TimesFM 2.5 (Oct 2025): XReg for known-future exogenous variables
+- Toto-2.0 (Apr 2026): proportional factorized space-time attention (handles thousands of concurrent metrics)
+- Moirai 1.x (2024): any-variate joint attention natively
+
+**The gap**: Cisco TSFM v1.0-preview is **univariate only**. In a network incident scenario, you have correlated signals: interface error rate, CPU load, BGP session state, packet loss — all moving together. A univariate model must be run once per metric, then manually correlated. This misses the causal coupling that APEX (channeled-dependent, 10-channel) already models correctly.
+
+**What to do**:
+- Extend TSFM v1.0 with a variate-wise attention block (Toto-style 11:1 ratio, or Moirai-style any-variate RoPE)
+- Add support for known-future covariates: maintenance windows, planned traffic changes, BGP route changes as scheduled events
+- Target: TSFM v1.1 supports multivariate (up to 64 concurrent metrics) + 2 future covariate channels
+
+---
+
+### Priority 5 — Fix Quantile Calibration and Publish Calibration Results (Q3 2026)
+**What competitors are doing**:
+- Datadog Toto uses a Student-T Mixture Model specifically designed for heavy-tailed distributions; publishes CRPS and BOOM calibration scores
+- Chronos-2 uses sinh⁻¹ transform for outlier-robust scaling; 21 quantile levels; publishes WQL across all quantiles
+- TimesFM 2.5 has a dedicated 30M calibrated quantile head
+
+**The gap**: Cisco TSFM's own technical report explicitly states: *"the q0.1–q0.9 range is not verified to contain the true value 80% of the time."* This is a production blocker. A predictive alert that says "90% confidence CPU stays below 85%" must actually be right 90% of the time or SRE trust collapses.
+
+**What to do**:
+- Run conformal calibration post-training on a held-out observability split
+- Publish calibration curves alongside v1.0 release (expected probability vs. empirical coverage at each quantile)
+- Adopt sinh⁻¹ scaling (from Chronos-2) to handle the zero-inflated, spike-heavy distributions common in network telemetry
+
+---
+
+### Priority 6 — Scale to a Model Family (Q4 2026 – Q1 2027)
+**What competitors are doing**:
+- Datadog Toto 2.0: 5 sizes (4M, 22M, 313M, 1B, 2.5B) — proved scaling laws, 22M matches 151M quality at 7× efficiency
+- Amazon Chronos: 5 sizes (8M to 710M) — edge to datacenter
+- IBM Granite-TTM: 1–5M params, top-4 on GIFT-Eval pretrained at tiny scale
+
+**The gap**: Cisco has one model: 500M. There is no Cisco-Edge (for Catalyst/Meraki hardware), no Cisco-Lite (for Splunk free tier), no Cisco-XL (for large enterprise AIOps). Every competitor offers a size ladder.
+
+**What to do**:
+- Train a 50M "Cisco TSFM-Edge" using u-μP hyperparameter transfer from the 500M model (Toto 2.0's technique — tune once, scale for free)
+- Train a 1.5B "Cisco TSFM-XL" for large-scale Data Fabric deployments
+- Release all three sizes on HuggingFace simultaneously to signal long-term commitment (model families get cited; single models get ignored after 6 months)
+
+---
+
+### Priority 7 — Publish the Observability Benchmark (Overdue)
+**What competitors are doing**: Datadog published BOOM in October 2025 — 350M observations, 2,807 real-world multivariate series — and now every paper benchmarks against it.
+
+**The gap**: Cisco's technical report (Nov 2025) promised a "public observability benchmark" in early 2026. It is July 2026 and it has not been released. Datadog has claimed the "observability benchmark" narrative. If Cisco doesn't publish theirs, Datadog's BOOM becomes the industry standard and Cisco's models are always evaluated on Datadog's home turf.
+
+**What to do**:
+- Release the Cisco Machine Data Benchmark by Q3 2026 — 1-min and 5-min resolution Splunk Observability metrics (anonymized), covering network, infrastructure, security, and application domains
+- Design it to include network-specific characteristics BOOM lacks: BGP state transitions, OSPF convergence events, VLAN flood storms, packet loss spikes — scenarios only Cisco has production data for
+- This transforms Cisco from a model vendor into a benchmark authority — the same move Datadog made with BOOM
+
+---
+
+### Summary: 12-Month Action Plan
+
+| Quarter | Priority | Action | Why Now |
+|---|---|---|---|
+| Q3 2026 | **Leaderboard presence** | Submit to GIFT-Eval + TIME benchmark | Zero credibility without it |
+| Q3 2026 | **Calibration fix** | Fix quantile head; publish calibration curves | Technical report flags it as broken |
+| Q3 2026 | **Multivariate** | Add variate-wise attention to TSFM v1.1 | All top competitors support this; Cisco doesn't |
+| Q3 2026 | **Benchmark release** | Publish Cisco Machine Data Benchmark | Overdue by 2 quarters; Datadog is filling the gap |
+| Q4 2026 | **Open APEX-Edge** | Release 10.5M weights + network hardware SDK | Cisco's only defensible moat — must be open to become standard |
+| Q4 2026 | **Agentic forecaster** | Wrap TSFM in Vigil FSM; submit as Cisco Agent to GIFT-Eval | Top 15 is all agentic; this is Cisco's fastest path to leaderboard top-20 |
+| Q4 2026 | **Model family** | Train 50M Edge + 1.5B XL variants using u-μP transfer | One model size signals a prototype; three sizes signals a platform |
+| Q1 2027 | **Covariate support** | Future-known covariate input (maintenance windows, scheduled BGP changes) | Chronos-2 and TimesFM 2.5 already ship this |
+
+---
+
+### The Core Strategic Bet
+
+Cisco has two things no competitor has: **production network hardware** (Catalyst, Meraki, ThousandEyes) and **Splunk's 300B+ observability data points**. Neither Datadog, Google, Amazon, nor Salesforce can replicate this. The risk is that Cisco treats TSFM as a research project while competitors ship agentic systems on top of their models and claim the AIOps narrative.
+
+The window to establish Cisco as the default TSFM for network operations is **the next two quarters**. After that, Datadog's BOOM benchmark and Toto-2.0's scaling story will be entrenched, and IBM's Granite-FlowState will be embedded in enterprise procurement conversations. The models themselves are converging in quality (MASE 0.67–0.71 across the top tier); the differentiator going forward is ecosystem, benchmark authority, and agentic integration — all areas where Cisco can win if it moves now.
+
+---
+
 ## Sources
 
 - [Cisco TSFM — Splunk Blog](https://www.splunk.com/en_us/blog/artificial-intelligence/introducing-the-cisco-time-series-model.html)
@@ -613,4 +807,8 @@ For the FSM incident commander on SP/Cisco network telemetry:
 - [Time-MoE — arXiv:2409.16040](https://arxiv.org/abs/2409.16040)
 - [Time-MoE GitHub](https://github.com/Time-MoE/Time-MoE)
 - [GIFT-Eval benchmark comparison](https://paperswithbacktest.com/course/timesfm-vs-chronos-vs-moirai)
+- [GIFT-Eval Live Leaderboard — tsfm.ai](https://tsfm.ai/benchmarks/gift-eval)
+- [GIFT-Eval paper — arXiv:2410.10393](https://arxiv.org/html/2410.10393v2)
+- [IBM Granite time series — GIFT-Eval #2](https://research.ibm.com/blog/SSM-time-series-model)
+- [TIME Benchmark leaderboard](https://huggingface.co/spaces/Real-TSF/TIME-leaderboard)
 - [TimeGEN-1 on Azure](https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/announcing-timegen-1-in-azure-ai-leap-forward-in-time-series-forecasting/4140446)
