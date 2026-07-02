@@ -1,8 +1,8 @@
-# 30 / 60 / 90 Day Plan — Splunk Frontier Models Team
+# 30 / 60 / 90 Day Plan — Splunk Foundation Models (PM Track)
 
-> **Context.** Joining the Splunk frontier-models team, working on log reasoning, time-series forecasting, and observability foundation models. Previous depth: agentic systems, retrieval, evaluator design (Vigil). Coming into a research-adjacent product team where the deliverable is *models that other Splunk products consume*, not end-user features.
+> **Context.** Product Manager joining Splunk's foundation-models team, covering time-series forecasting (Cisco/Splunk TSFM, Cisco APEX), log reasoning, and observability foundation models generally. The team's outputs are *models that other Splunk products consume* (SAIA, SPL Copilot, ITSI, Observability Cloud) — so this PM role is closer to "platform PM for model APIs" than "feature PM for end-user surface."
 >
-> The three phases are **absorb → own → lead**. Each phase has a specific measurable outcome, not just activities.
+> The three phases are **absorb → own → lead**. Each has explicit outcomes, not just activities. PM-specific artifacts (PRDs, customer research, strategy docs) replace the IC artifacts (PRs, design docs, benchmarks) — but the discipline of measurable outcomes is the same.
 
 ---
 
@@ -10,195 +10,249 @@
 
 Five anchors that decisions get judged against for the first 90 days:
 
-1. **Ship something small in the first two weeks.** A one-file bug fix, a benchmark improvement, a doc PR. Establishes credibility and reveals the review + deploy loop before you need to move something ambitious through it.
-2. **Learn the eval infra before proposing new models.** In a frontier-models team, the eval harness is the reasoning artifact. Anyone can gesture at a model idea; someone who deeply understands the eval harness can ship one.
-3. **Assume every dataset has a governance story.** Splunk's data is customer telemetry. Any training data question — provenance, PII handling, tenant isolation — is a real question, not a paperwork question. Learn who to ask and what the answer usually looks like *before* you propose an experiment that needs new data.
-4. **Prefer measurable improvements to novel architectures.** The team likely already has "let's try Model X" ideas queued. A 3% improvement in an existing metric with a defensible cause is more valuable in month one than a shiny alternative approach.
-5. **Show your work.** Every experiment produces a written artifact — a doc, a wiki page, a Notion note — that outlasts the Slack conversation. Six weeks in, when someone says "did we ever try Y?", they should be able to find your answer.
+1. **Customer signal beats internal opinion.** In a foundation-model team, the loudest voice in the room is usually the ML lead with the most impressive demo. Your job as PM is to hold the mirror: *does this actually solve a problem a customer will pay for?* Book customer conversations in week one.
+2. **PRDs are the reasoning artifact.** In an IC-heavy team, a PRD gets read more carefully than any Slack thread. Ship a good one in the first 45 days — it's your credentialing artifact with engineering.
+3. **Assume every model choice has a governance story.** Splunk's data is customer telemetry. Any training-data or inference-boundary question — provenance, PII, tenant isolation, EU vs. US data residency — is a real question, not a paperwork question. Ask what "safe to ship" means to your legal + compliance partners before you have to.
+4. **Positioning is more of your job than roadmap.** The team already has a technical roadmap; where they need a PM is in answering "why should a customer pay for our TSFM when Amazon Chronos-2 is Apache-licensed?" — a positioning question, not a capability question.
+5. **Show your work.** Every stakeholder conversation, every customer call, every prioritization decision produces a written artifact (a Notion page, a doc, an email) that outlasts the meeting. Six weeks in, when someone says "what did Enterprise Customer X actually say?", you have the transcript.
 
 ---
 
 ## Days 1–30 — Absorb
 
-### Codebase & Team
+### Team & Stakeholders
 
-- **First week:** repo tour with the person who reviews your first PR. Read the top-level READMEs of every repo the team owns before touching any file.
-- Identify the **five people** you'll interact with most weekly (usually: manager, tech lead, adjacent-team PM, data lead, one senior IC). Book recurring 1:1s in week one; do not wait for them to schedule.
-- Attend every recurring meeting for the first month — even the ones that "won't apply to your work." Presence in month one is how you learn who owns what.
-- Read the last **six months** of team announcements, design docs, and post-mortems. Write down every acronym you don't recognize and ask.
+The PM stakeholder graph is different from an IC's. Map it explicitly:
 
-### Model Portfolio & Roadmap
+- **Direct partners:** eng lead, engineering manager, design lead (if the team has one), UX researcher
+- **Adjacent PMs:** SAIA / SPL Copilot / ITSI / Observability Cloud / SOAR — everyone whose product surface *consumes* the models
+- **Go-to-market:** field-facing PMM, one AE covering enterprise customers, one CSM (customer success manager) with an AI/AIOps portfolio
+- **Executive:** your manager, your manager's manager, the VP of AI / Platform (whoever the exec sponsor of the foundation-models bet is)
+- **Analyst relations:** the person who briefs Gartner / Forrester on Splunk's AI story — foundation-model positioning goes through them
 
-Understand the full portfolio before proposing anything:
-- What models are **in production** (shipped, running against customer data)?
-- What's in **R&D / evaluation** (not shipped, being measured)?
-- What's on the **6-month roadmap** — and importantly, what's *not* on it that senior people wish were?
-- Where does the team's work meet **Splunk AI Toolkit / Splunk AI Assistant / SPL Copilot / SAIA**? These are the downstream consumers.
+Book 30-min intros with every name above in the first three weeks. **Don't wait for them to schedule.**
 
-### Data Pipeline & Eval Infra
+### Product Portfolio & Roadmap
 
-The single most important thing to internalize this month:
+Before proposing anything, learn:
 
-- **Where does training data come from?** Real customer data, synthetic, licensed, public? Under what governance?
-- **How is quality measured?** What are the offline benchmarks? What are the online metrics?
-- **What eval harnesses exist?** Get one of them running end-to-end on your laptop by day 15.
-- **What's the failure mode?** Read the last three "the model got worse in production" investigations. Every team has some.
+- What models are **shipped and monetized** today? (Which SKUs, which customer segments, what's the attach rate?)
+- What's in **evaluation / private preview**?
+- What's on the **quarterly roadmap** — and which items are technical vs. product-driven?
+- Where does each model surface in the customer's product experience? (A model that only lights up in a hidden Observability Cloud feature has different PM levers than one exposed in the SAIA chat.)
+- Which **downstream product PMs** are net-detractors of the model team, and why? (Every foundation-model team has at least one internal skeptic. Meet them first.)
 
-### Reading List (Foundation Time-Series & Log Reasoning)
+### Customer & Competitive Landscape
 
-Don't try to read all of these in month one — pick 4–5, deep-read them:
+Foundation models for observability are in an active competitive window. Get fluent in it:
 
-**Time-series foundation models (Splunk's forecasting angle):**
-- Chronos (Amazon Science, 2024) — zero-shot forecasting via LLM tokenization
-- Moirai (Salesforce, 2024) — universal forecasting with multi-scale patching
-- TimesFM (Google, 2024) — 200M-parameter time-series foundation model
-- Lag-Llama (ServiceNow, 2024) — probabilistic time-series with LLaMA architecture
-- Cisco Time Series Model announcement (2025) — competitor / partner context
+**Direct competitors (time-series):**
+- **Datadog Toto 2.0** — currently #3 on GIFT-Eval, positioned specifically for observability/AIOps. Read Datadog's public materials on Toto (blog posts, `.ddconf` talks). This is the model that shows up in Splunk-vs-Datadog RFPs.
+- **Amazon Chronos-2** — #1 on GIFT-Eval, Apache 2.0. The "why not just use it" question is real; every field conversation will surface it eventually.
+- **Google TimesFM 2.5** — #2 on GIFT-Eval, also Apache 2.0. Enterprise customers running on GCP will ask about it.
+- **Salesforce Moirai 2.0** — CC-BY-NC-4.0 on weights, which matters for customer redistribution.
 
-**Log reasoning / semi-structured text:**
-- LogPPT (2023) — prompt-based log parsing
-- LogGPT, DivLog, LILAC — recent log parsing benchmarks
-- BigLog (Huawei, 2024) — foundation model for log analytics
-- Splunk's own SPL/log analysis papers if any have been published
+**Direct competitors (log reasoning / observability agents):**
+- Datadog Bits AI, Grafana AI (Grafana 12 rollout), Elastic AI Assistant, New Relic AI, Dynatrace Davis CoPilot, ServiceNow Now Assist
+- AWS Q Developer's observability surface
 
-**Observability foundation models context:**
-- Recent Splunk AI announcements + `.conf` talks from the last two events
-- Datadog Bits AI + AWS Q Developer for competitive framing
-- Foundation-model-for-observability positioning papers (Grafana, Chronosphere, New Relic)
+**Ask your PMM:** which two of these are in the most active competitive deals right now? Those are your priority reads.
+
+**Ask CS:** which customers are currently referenced in Splunk AI-Assistant case studies? Their raw feedback (unfiltered by marketing) is the fastest read on what's actually working.
+
+### Read the Existing Product Artifacts
+
+- Every PRD the team has shipped in the last 12 months
+- The last two `.conf` foundation-model announcements + the transcripts if available
+- Splunk's most recent AI Predictions / State of Security / State of Observability reports (customer voice, packaged)
+- The internal roadmap deck for the current fiscal year
+- Analyst briefings from the last two Gartner / Forrester / IDC cycles that mention Splunk AI
+
+### Reading List (PM Craft + Domain Context)
+
+Pick 3–4 from each list. Not one-a-week — deep-read a few:
+
+**PM craft:**
+- *Inspired* — Marty Cagan (product discovery discipline)
+- *Working Backwards* — Amazon's PR/FAQ methodology (relevant because Splunk's internal PM culture increasingly mirrors it)
+- *The Hard Thing About Hard Things* — Horowitz (for the "hard prioritization call" chapters, not the founder narrative)
+- *Escaping the Build Trap* — Melissa Perri (outcome-driven PM, especially for platform PM roles)
+
+**Foundation-model context (skim, don't deep-read):**
+- Chronos-2, TimesFM 2.5, Toto 2.0 model cards + accompanying blog posts (competitive intel, not architecture study)
+- The GIFT-Eval benchmark methodology paper (understand the yardstick that ranks Splunk against competitors)
+- One recent Anthropic/OpenAI/Google-DeepMind post on eval methodology (frames how the industry talks about "is the model better")
+
+**Domain / competitive:**
+- Datadog `.ddconf` 2025 + 2026 keynotes (their AI positioning is the sharpest of Splunk's direct competitors)
+- Gartner Magic Quadrant for AIOps + Observability, current edition
+- Splunk's own quarterly earnings AI mentions (what's the CFO promising the street?)
 
 ### Signals This Phase Is Working
 
-- You can explain the team's model portfolio to an outsider in 5 minutes
-- One PR merged
-- Every recurring 1:1 has a running notes doc
-- You've caught yourself asking a question that would have been better asked in month one — that's the signal you're absorbing
+- You can explain **three customer segments** the team's models serve, what problem each has, and which competitor they're most tempted by
+- You've completed **5–8 customer or prospect conversations** with someone from CS or the field on the call
+- Every recurring 1:1 has a running Notion / doc page (not just calendar invites)
+- You've caught yourself starting a sentence with "the customer we talked to last week said…" and it lands
+
+**Anti-signal:** if you're catching yourself explaining *transformer architecture* to peers in month one, you're absorbing on the wrong axis. Redirect to the customer and pricing questions.
 
 ---
 
 ## Days 31–60 — Own
 
-### Take Component Ownership
+### Take Product-Surface Ownership
 
-Pick **one** deliverable to own end-to-end. Best candidates:
+Pick **one** product surface to become the PM owner for. Best candidates given the team scope:
 
-- A specific eval / benchmark harness that's under-loved
-- A data-quality dashboard for a training pipeline
-- One evaluation dimension for an existing model (e.g., calibration for the time-series forecaster)
-- A regression suite for a model release
+- **The TSFM API surface** — pricing, packaging, docs, developer experience for internal + external consumers
+- **One vertical use case** — e.g., "TSFM for network telemetry" (Cisco Catalyst integration) or "TSFM for security anomaly detection"
+- **The competitive-response workstream** — Datadog Toto specifically. If Splunk needs a coherent field story on Toto vs. our TSFM, that story doesn't write itself.
+- **The evaluation + benchmarking narrative** — Splunk isn't on GIFT-Eval yet. That gap has product implications (analysts ask about it). Owning "get us on the leaderboard, and be public about the numbers" is a real workstream.
 
-The criterion: something that (a) needs owner attention, (b) doesn't have a strong current owner, (c) is small enough to make measurable progress on in 30 days, and (d) touches the metrics the team already cares about.
+**Criterion:** something that (a) is under-owned today, (b) has an eng partner ready to move on it, (c) has a customer or exec asking about it, and (d) can produce a measurable outcome in 30 days.
 
-**Anti-pattern:** owning a project that's *not* on the team's roadmap. Owning something the team ignores is worse than not owning anything — it advertises misalignment.
+**Anti-pattern:** owning a workstream that only the eng team cares about, or only your exec sponsor cares about — you need *both* sides pulling. Alignment on both sides is what makes a workstream shippable.
 
-### Ship One Real Improvement
+### Ship One PRD
 
-By day 60, ship one non-trivial change with a measured outcome:
-- "Improved calibration on the forecaster's P90 predictions by X%" — with the before/after eval numbers
-- "Reduced the eval harness runtime from N hours to M minutes"
-- "Added Y benchmark to our regression suite, caught Z bugs in the last release"
+By day 60, one PRD circulated → reviewed → committed. Structure:
 
-Publish the numbers in a written doc, tagged for the team.
+- **Problem statement** in customer language ("Enterprise SREs monitoring 10K+ time series can't get useful forecasts on <90-day-old signals because…")
+- **Success metric** — a customer or business outcome, not a model metric ("30-day retention of TSFM-forecast users increases from X% to Y%")
+- **Scope** — what's in, what's explicitly out
+- **Dependencies** — eng team, design, GTM, legal
+- **Rollout** — private preview → GA path, with the gate criteria at each phase
+- **Risks** — the top three, with mitigation owners
+- **Ask** — headcount, budget, air cover from the exec sponsor
+
+This is your credentialing artifact. Circulate it broadly at day 45; iterate to committed state by day 60.
+
+### Run One Customer Research Effort
+
+Pick a research question the team hasn't answered:
+- "How do our enterprise customers currently handle time-series forecasting today, before Splunk?"
+- "What's the buyer's mental model for 'AI-powered' AIOps features — do they trust it, do they need it explained, do they want to see the math?"
+- "What does the Toto vs. TSFM conversation actually sound like in a competitive RFP?"
+
+Talk to **8–12 customers or prospects** in 3–4 weeks. Publish a synthesis doc. This becomes the reference document the team cites for the next quarter — real PM value.
+
+### Drive One Prioritization Decision
+
+At day 45–55, there's usually a live tradeoff on the roadmap. Make it your job to write the one-pager that closes it. Structure:
+- The decision to be made
+- Options considered (with a "third option" that isn't obviously wrong)
+- Recommendation + rationale
+- Reversibility (is this a one-way door?)
+- Owner + timeline
+
+The value here is less the decision than the reputation for driving decisions — most PMs let these linger; the ones who close them get trusted with harder ones.
 
 ### Cross-Team Relationships
 
-- Meet the **Splunk AI Toolkit / Assistant / SAIA** team leads. Understand what they need from your team's models.
-- Meet the **Observability Cloud + ITSI + IT Service Intelligence** counterparts — they're often the biggest downstream consumers of time-series models.
-- Meet the **security research** team if log-reasoning models are touching security data.
-- Aim for 15 min introductions, not deep-dives. Goal is knowing who to page, not becoming their peer.
+- **SAIA / SPL Copilot PMs** — biggest downstream consumers of your models. Weekly or biweekly touchpoint.
+- **Observability Cloud + ITSI PMs** — same category. Time-series forecasts feed into their surfaces.
+- **PMM + Field PMs** — the customer story goes through them; make sure the story you're building matches the story sales is telling.
+- **Analyst Relations** — one conversation, understand what Gartner is currently asking about, and what Splunk's response is.
 
 ### Signals This Phase Is Working
 
-- Manager can point to "the person who owns X" and mean you
-- Two PRs merged into a service other than your primary component
-- You've been invited to a meeting you didn't schedule yourself
-- You've written one doc that a peer bookmarked or forwarded
+- Your manager can name the workstream you own without prompting
+- One PRD in "committed" state, not just "draft"
+- Two adjacent-team PMs have referenced your customer research in their planning
+- You've been included in a customer call you didn't set up yourself
+- The eng lead is coming to *you* to negotiate scope, not the other way around
 
 ---
 
 ## Days 61–90 — Lead
 
-### Own a Workstream End-to-End
+### Own Quarterly Planning for One Workstream
 
-Take one initiative from **proposal → experiment → evaluation → handoff-to-prod-or-decommission**. This is the difference between "I fixed a bug in the eval harness" (month 2 outcome) and "I ran the calibration-improvement workstream that shipped to prod in Q4" (month 3 outcome).
+Q4 (or Q1 of the fiscal year — whichever is next) planning cycle: own the planning for one workstream end-to-end.
 
-Success criteria for your workstream doc:
-- **Problem statement** that a senior IC agrees is worth solving
-- **Success metric** with a specific target
-- **Baseline number** measured *before* changes
-- **Experiment plan** with a decision point (ship / kill / iterate)
-- **Post-mortem** at the end, whether it shipped or didn't
+- **Inputs** — customer research, competitive intel, eng capacity, exec priorities, GTM commitments
+- **Output** — a committed set of deliverables with owners, milestones, and gate criteria
+- **Communication** — a written narrative document, not a slide deck (Splunk / Amazon PM norm)
 
-### Author a Design Doc for a Q4+ Initiative
+The workstream you owned in month two becomes the workstream you're planning for in month three. This is how PMs graduate from "shipping the current thing" to "shaping the next thing."
 
-Not something you'll implement in month three — something you're *proposing* for the next quarter. This is how you graduate from "shipping ticket work" to "shaping team direction."
+### Author a Product Strategy Doc
 
-Structure:
-- One-paragraph problem
-- Why now (external + internal drivers)
-- Proposed approach (with alternatives considered)
-- Cost estimate (person-weeks + compute)
-- Risk register
-- Ask (specific: 2 engineers for 6 weeks, or budget for X GPUs, or air cover for a customer conversation)
+Not a quarterly plan — a **12–18 month strategy** for one specific bet. Structure:
 
-Circulate at week 10. Iterate on feedback in weeks 11–12. Land as a decision in week 13.
+- **Where the market is going** (customer trend + competitive trend, backed by real data)
+- **Where Splunk should place its bet** (specific positioning, not "AI is important")
+- **What we build vs. buy vs. partner** — real answer, not "we'll figure it out"
+- **How we know if it's working** — leading indicators (product metrics) + lagging indicators (revenue, retention, competitive win rate)
+- **Timeline + investment** — headcount, compute, GTM support
+- **What we're *not* doing** — every strategy is a set of "no"s dressed up as "yeses"
 
-### Establish Signature Area
+Circulate at week 10. Iterate on feedback in weeks 11–12. Land as a decision at week 13.
 
-By day 90, you should be the **go-to person** for one specific thing:
-- "Ask Bharat about time-series calibration"
-- "Ask Bharat about the log-reasoning eval harness"
-- "Ask Bharat about our SPL copilot benchmarks"
+### Become the "Voice of the Customer" for One Area
 
-Signature areas are earned, not claimed. If people are already routing questions to you at day 90, you're there. If not, don't force it — pick a smaller thing next quarter.
+By day 90, one specific product question should route to you:
+- "Ask Bharat what enterprise SREs actually want from time-series forecasting"
+- "Ask Bharat what the Toto competitive response looks like in the field"
+- "Ask Bharat what the packaging model for foundation-model inference should be"
+
+Ownership of a *question* — not just a workstream — is the mark of a senior PM. Questions outlast projects.
 
 ### Set 6-Month Goals with Your Manager
 
-By day 85, have a written 6-month goal doc with your manager:
-- 3–4 goals with quarterly milestones
-- What "exceeds expectations" looks like on each
-- What support you need from the manager (air cover, budget, headcount)
+By day 85, a written 6-month goal doc:
+- 3–4 outcome-based goals (not activity-based — "reach X% adoption of feature Y" not "ship feature Y")
+- Quarterly milestones for each
+- What "exceeds expectations" looks like
+- Support required: air cover, budget, headcount
 
-This is *your* forcing function. Managers rarely push for this doc; ICs who write it are rare and valued.
+Managers rarely push for this doc; PMs who write it become the ones whose scope grows.
 
 ### Signals This Phase Is Working
 
-- Your name appears in a design doc you didn't write
-- A senior IC asks *your* opinion on their design doc
-- Your manager references your workstream in a skip-level or team-wide update
-- You've been asked to give a talk at a team meeting
+- Your name appears in a leadership doc you didn't write
+- A senior IC or another PM asks for your opinion on their PRD before shipping it
+- Your workstream is referenced in a skip-level or leadership all-hands update
+- You've been asked to represent the team at a customer briefing or analyst call
+- The competitive intel you produced is being cited in exec-level positioning conversations
 
 ---
 
 ## Recurring Cadence to Establish
 
-| Rhythm | What |
+| Rhythm | Meeting |
 |---|---|
-| **Weekly** | 1:1 with manager (30 min), 1:1 with tech lead (30 min), team standup, team meeting |
-| **Biweekly** | 1:1 with one adjacent-team peer (rotate through 4–6 people over the quarter), data-team sync |
-| **Monthly** | Skip-level 1:1 (30 min), retro on the previous month's plan, reading group / paper club (if it exists — start one if not) |
-| **Quarterly** | Written self-review, 6-month goal check-in, comp/scope conversation |
+| **Weekly** | 1:1 with manager (30 min), eng partner sync (30 min), design partner sync if applicable (30 min), team standup, weekly team meeting |
+| **Biweekly** | Adjacent PM sync (rotate through 4–6 counterparts across the quarter), CS / field feedback loop, PMM alignment |
+| **Monthly** | Skip-level 1:1 (30 min), competitive intel review, retro on the previous month's plan, analyst briefing prep (if in cycle) |
+| **Quarterly** | Written self-review, 6-month goal check-in, scope / comp conversation, roadmap review with exec sponsor |
+
+**Direct customer contact** should never be less than 2 conversations per month, even in the busiest quarters. When it drops below that, your intuition is drifting from the market.
 
 ---
 
 ## What NOT to Do (In Priority Order)
 
-1. **Don't rewrite existing code in month one.** Every senior IC has watched a new hire attempt to "clean up" a codebase and shipped nothing else that quarter. Add before you subtract.
-2. **Don't propose a new model architecture in month one.** You don't know the eval curves, the data constraints, the compute budget, or the customer segments yet. Proposals in month one signal missing context, not initiative.
-3. **Don't chase every shiny paper.** In an evaluation-driven team, the discipline is knowing which papers to *ignore*. Frontier-model output is noisy — most published claims don't hold up in production observability data.
-4. **Don't over-commit in month two.** Owning one component well beats owning three components poorly. Say no to the second workstream even if it flatters you.
-5. **Don't skip writing.** Every experiment, every 1:1 with a stakeholder, every design decision — write it down. Six weeks later the delta between engineers who wrote and engineers who didn't is enormous.
-6. **Don't confuse Slack presence for progress.** Answering messages fast is not the same as shipping. Block 3–4 hour deep-work windows daily and defend them.
+1. **Don't try to be a technical peer to engineering.** You'll never win. Be a great *partner* instead — the PM who asks the sharpest customer questions, not the second-best ML question. Deep-learning-paper deep dives are engineering's job; making sure the paper's approach solves a customer problem is yours.
+2. **Don't skip customer conversations because "the team already knows the customer."** Team-internal folklore about the customer decays fast, especially in a hot market. Every month you go without direct customer contact, your model of the market drifts.
+3. **Don't propose new features in month one.** You don't know the eng constraints, the compute budget, the platform limits, or the commercial model yet. Feature proposals in month one signal missing context, not initiative.
+4. **Don't over-commit in month two.** Owning one product surface deeply beats owning three shallowly. Say no to the second workstream even if it flatters you — the senior PMs at Splunk will notice and respect the "no."
+5. **Don't skip writing.** Every customer call, every stakeholder decision, every competitive read — write it down. Six weeks later, the delta between PMs who wrote and PMs who didn't is enormous, and PMs are judged on written artifacts more than any other role.
+6. **Don't confuse Slack presence with progress.** Answering messages fast is not the same as shipping a PRD. Block 3–4 hour deep-work windows daily; a PRD you keep restarting is worse than the PRD you finish.
+7. **Don't fight the internal politics on day one.** Every foundation-model team has an internal "should we just wrap open-source Chronos" faction and a "we should build our own moat" faction. Neither is wrong. Understand both positions before you take one.
 
 ---
 
 ## Post-90: The Q2 Question
 
-At day 90, the question shifts from "am I ramping successfully?" to "what am I *known for* at Splunk?" Most people don't answer this deliberately — they end up known for whatever they got assigned. The engineers who *choose* their signature area at month three end up 6–12 months ahead of peers at the same tenure.
+At day 90, the question shifts from "am I ramping successfully?" to "what am I *known for* at Splunk?" Most PMs don't answer this deliberately — they end up known for whatever they were assigned. PMs who *choose* their signature area at month three end up 6–12 months ahead of peers at the same tenure.
 
-Signature area candidates (biased toward Vigil-adjacent depth):
-- **Agentic reasoning over observability data** — the SAIA / SPL Copilot / autonomous-triage space, where Vigil is a directly applicable prior
-- **Time-series foundation models for enterprise** — Chronos / TimesFM / Moirai adapted to Splunk-scale telemetry
-- **Evaluation methodology for observability models** — how do you measure "the model got better" when the ground truth is contested and the tail is heavy?
-- **Log reasoning at scale** — semi-structured text is where Splunk has data advantages nobody else has
+Signature area candidates (biased toward foundation-model-team scope):
+
+- **AIOps foundation-model positioning** — the PM who owns Splunk's answer to Datadog Toto, from field enablement through analyst positioning through packaging. Directly addresses a competitive gap.
+- **Enterprise packaging + pricing for model inference** — how does foundation-model consumption get priced for Splunk customers? Per-forecast, per-workspace, bundled? This is a research and design problem masquerading as a pricing problem.
+- **Build-vs-buy strategy for the model portfolio** — Chronos-2 is Apache 2.0 and #1 on the leaderboard. The strategic call on which models Splunk should build vs. wrap vs. license is a real PM decision. Somebody has to own it.
+- **Voice-of-customer for foundation-model UX** — customers don't trust AI they don't understand. The PM who owns "how do we make foundation-model outputs auditable and trustable in a customer's product experience" carries a Splunk-specific advantage (audit trail is part of Splunk's core value prop).
 
 Any of these are defensible signature areas. Pick before you're pigeon-holed into one.
