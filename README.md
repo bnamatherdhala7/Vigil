@@ -12,6 +12,7 @@ Vigil is a Finite State Machine agent that sits on top of Splunk's Model Context
 - **[`docs/model-evaluation.md`](./docs/model-evaluation.md)** — Cisco Time Series Model benchmark + 4-priority productization roadmap
 - **[`docs/competitive-landscape.md`](./docs/competitive-landscape.md)** — 25+ vendor competitive deep-dive across 5 tiers
 - **[`docs/deployment.md`](./docs/deployment.md)** — how the app is deployed (Vercel frontend + local backend)
+- **[`docs/splunk-frontier-models-30-60-90.md`](./docs/splunk-frontier-models-30-60-90.md)** — 30/60/90 day plan for the Splunk frontier-models role (log reasoning · time-series · observability foundation models)
 - **[`workflow/`](./workflow/README.md)** — visual walkthrough: section-by-section screenshots of the live UI with descriptions of what each panel does and how it's wired
 - **[`docs/archive/`](./docs/archive/)** — historical working documents (prior PRD versions, briefing notes)
 - This README — engineer-facing: how the system works, how to run it, what's in the codebase
